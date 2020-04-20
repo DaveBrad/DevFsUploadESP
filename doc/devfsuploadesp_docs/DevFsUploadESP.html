@@ -1,0 +1,516 @@
+<!-- Copyright (c) 2020 dbradley. -->
+<!DOCTYPE HTML>
+<HTML>
+ <HEAD>
+  <meta charset="utf-8"/>
+  <title><i>DevFsUploadESP</i> development aid</title>
+  <link rel="stylesheet" type="text/css" href="./DevFsUploadESP.css">
+  <script src="./DevFsUploadESP.js" type="text/javascript"></script>
+  <script src="./scriptFlashElement.js" type="text/javascript"></script>
+ </HEAD>
+ <BODY LANG="en-CA" DIR="LTR" onload="myloaded();">
+  <div class="divtabszone">
+   <div id="tabscontainer"></div>
+   <div class="msgdiv">Not print friendly<br>
+    <div class="prtfocx" onclick="printFriendly();" tabindex="0">print friendly</div></div>
+  </div>
+  <div class="divcontentcontainer">
+   <!-- ---------------------------------- -->
+   <div id="content_ugid" class="contentsee">
+    <div class="contentsection">User Guild</div>
+    <h1 id="ugh1"><i>DevFsUploadESP</i> User Guide</h1>
+    <div class="inddiv">
+     <p class="nbhang"><b>NB:</b> minimal fault tolerance code is implemented, so as to minimize ESP storage use. Be careful when using any 'entry' fields, the ESP is subject to crashing if the user does not practice common sense and tolerance.</p>
+     <div data-duplicate="suppconfigdesc"></div>
+     <h2>URL to upload-page</h2>
+     <div class="inddiv secttoo">
+      <p>A URL to the ESP32/8266 host-address, port &amp; path provides access to the upload-page. Depending on how <i>Station-mode</i> or <i>AP-mode</i> are coded then both modes may function.</p>
+      <br>
+      <table class="tabupld"><tr>
+        <td><span>&lt;ESP-host-address[:port]&gt;&lt;path&gt;</span></td>
+        <td></td>
+        <td></td>
+       </tr><tr>
+        <td><span>&lt;ESP-host-address[:port]&gt;</span>/upload</td>
+        <td>' /upload ' &nbsp;&nbsp; default path</td>
+        <td>set-able by user code<br><a href="#alturl" class="setatagtext"> </a></td>
+       </tr><tr>
+        <td>e.g. 192.168.0.5/upload</td>
+        <td>&bull; Station-mode URL</td>
+        <td></td>
+       </tr><tr>
+        <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;192.168.4.1:8011/upload</td>
+        <td colspan="2">&bull; AP-mode URL usually has a different IP and explicit port</td>
+       </tr></table>
+
+      <p>The initial upload-page is as below and is basic functionality, along with information about the FS and ESPnnnn.</p>
+      <p>File or directory functionally is part of <i>List Files</i> or <i>List Dir(s)</i> usage.
+      <figure>     
+       <br>
+       <img  src="./imgs/initialpage.png" alt="missing img">
+       <figcaption>Fig.1 - upload-page</figcaption>
+      </figure>
+     </div>
+     <h2>Upload-page Description</h2>
+     <br>
+     <div class="inddiv">
+      <h3>Upload Zone</h3>
+      <div class="inddiv">
+       <p>The <i>upload zone</i> contains the basic functionality, which is uploading files, via Browser-UI operations.</p>
+       <h4>upload dir: <i>field</i></h4>
+       <div class="inddiv">
+        <br>
+        <img src="./imgs/selected-dir.png" alt="dir image">
+        <div class="pgfield">
+         <p>The <span>upload dir: <i>field</i></span>  is the ESP-target-directory path where files/directory will upload too. The field may be manually set (typing); or using a 'select' button within the 'List Dir(s)' listing.</p>
+         <p class="nbhang">NB: It must start &amp; end with "/" to be valid.
+         </p>
+         <p class="warninghang">WARNING: length of <i>upload dir: field</i> &amp; file-name may not exceed FS specification. [Not checked.]</p>
+        </div>
+       </div>
+       <h4>Browse and Upload file(s)/Directory</h4>
+       <div class="inddiv">
+        <br>
+        <img src="./imgs/browse-upload.png" alt="browse/upload image">
+        <div class="pgfield">
+         <p>This set of buttons supports prior acquire of files/directory information, and then explicit upload action.</p>
+         <dl>
+          <dt><div class="divbutt divbuttas">R</div> <i>button</i></dt>
+          <dd>A button to <i>Reset</i> any browse-selected setting associated with browse-button actions.</dd>
+          <dt><div class="divbutt">Browse...</div> <i>button</i></dt>
+          <dd>A browser-UI interface which selects file(s)/Directory from the client. A prior acquire the user selects, from a popup chooser, file(s)/directory as appropriate.</dd>
+          <dt><div class="divbutt divbuttas">Upload file(s)</div>&nbsp;/&nbsp;
+           <div class="divbutt divbuttas">Upload Directory</div>&nbsp;<i>button</i></dt>
+          <dd>When enabled allows upload to the ESP device  to be performed for the <i>'browse-selected'</i> files or directory. The ESP-target-directory is the <i>'upload dir: field'</i> contents.
+           <div class="inddiv">
+            <br>
+            <table class="tabendis">
+             <tr><td>Enabled</td><td>Press to begin upload</td></tr>
+             <tr><td>Disabled</td>
+              <td>Either <i>'browse-selection'</i> or <i>'upload dir: field'</i> is invalid or not set. </td></tr>
+            </table>
+
+           </div>
+           <p class="warninghang">WARNING: length of <i>field</i> + file-name may not exceed FS specification. [Not checked.]</p>
+          </dd>
+         </dl>
+        </div></div>
+       <h5>Browse-selected</h5>
+       <div class="inddiv">
+        <p>When files/dirs are browse-selected, information text associated with the Browse buttons will change from <i>'No files selected'</i> or <i>'No directory selected'</i>. Below is shown  change to <b>browse-selected</b> text, along with non-gray <i>'upload'</i> button. [Note: 'browse-selected' is a browser dependent display and may be different.]</p>
+        <p>Only 'file(s)' or 'directory' may be active at a time, not both. Appropriate other buttons are disabled, until a 'reset' or 'upload' is done.</p>
+        <figure>
+         <img src="./imgs/upldimgfile.png" alt="upld file image">
+         <figcaption>file(s) view [note: directory buttons disabled]</figcaption>
+        </figure>
+        <figure>
+         <img src="./imgs/upldimgdir.png" alt="upld dir image">
+         <figcaption>directory view [note: file(s) buttons disabled]</figcaption>
+        </figure>
+       </div>
+       <h5>Upload done</h5>
+       <div class="inddiv">
+        <p>When uploading completes, a list of all uploaded files is shown for the full-path/file-name. This is information only.</p>
+        <p>This example was <i>Upload Directory</i> of '/a/' directory to the ESP-target-directory '/'.
+        </p>
+        <img src="./imgs/uplddone.png" alt="upld done image">
+       </div>
+      </div>
+      <br>
+      <h3>List Zone</h3>
+      <div class="inddiv">
+       <p>The <i>list zone</i> allows viewing of files or directories kinds on the ESP's FS. Additionally, FS management buttons are provided to manipulate files/directories.</p>
+       <p>Only one <i>list</i> kind is viewable at a time (an ESP storage optimization) and is the same in presentation for SPIFFS and LittleFS.</p>
+       <p class="nbhang">NB: Directories have different implementations, but <i>DevFsUploadESP</i> has a consistent presentation for both.
+       </p>
+      </div>
+      <h4>Difference: SPIFFS - LittleFS</h4>
+      <div class="inddiv">
+       <p>Implementation is different between the file-systems (FSs), Also, ESP32 and ESP8266 implementations differ.</p>
+       <p><i>DevFsUploadESP</i> attempts to provide a Browser-UI that works for both FSs, due to compatible APIs.</p>
+
+       <table class="tabspvslts"><tr>
+         <td colspan="3">
+          HOWEVER: <b>directories work differently</b> between FSs:</td></tr>
+        <tr>
+         <th></th>
+         <th>SPIFFS</th>
+         <th>LittleFS</th>
+        </tr>
+
+        <tr>
+         <td>Node</td>
+         <td>&bull; only <span>files</span> nodes supported</td>
+         <td>&bull; <span>file</span> nodes and <span>directory</span> nodes are supported</td>
+        </tr>
+
+        <tr>
+         <td>File name</td>
+         <td>&bull; "&lt;file-name&gt;"</td>
+         <td>&bull; "&lt;dir-path&gt;&lt;file-name&gt;"<br>associated as a sub-node of a dir-node</td>
+        </tr>
+
+        <tr>
+         <td>Directory names</td>
+         <td>&bull; N/A</td>
+         <td>&bull; &lt;dir-path&gt;</td>
+        </tr>
+
+        <tr class="trpad">
+         <td>Path-file-name </td>
+         <td>"&lt;dir-path&gt;/&lt;file-name&gt;"</td>
+         <td>"&lt;dir-path&gt;" + "&lt;file-name&gt;"</td>
+        </tr>
+
+        <tr>
+         <td> </td>
+         <td>&nbsp;&nbsp;&nbsp;&nbsp;eg. '/dir1/dir2/filename'</td>
+         <td>&nbsp;&nbsp;&nbsp;&nbsp;eg. '/dir1/dir2/' + 'filename' => <i>'/dir1/dir2/filename'</i></td>
+        </tr>
+        <tr>
+         <td></td>
+         <td></td>
+         <td></td>
+        </tr>
+        <tr>
+         <td><i>DevFsUploadESP</i><br>directory representation</td>
+         <td>'<span style="background: #8fd8d8; color:black;">/dir1/dir2/</span>'
+          <br>- pseudo directory<br>- has background color</td>
+         <td>'/dir1/dir2/'</td>
+        </tr>
+       </table>
+       <p class="nbhang">NB: Pseudo directory only applies to SPIFFS listings. It allows the various directory buttons (select, mk-subDir and rmDir) to function on SPIFFS in a pseudo manner.
+       </p>
+      </div>
+      <br>
+      <h4>List Files</h4>
+      <div class="inddiv">
+       <p>List all the files in the ESP's FS; with full-file-path, its size, and buttons for action on the file.</p>
+       <dl>
+        <dt><div class="divbutt divbuttas">Delete</div> <i>button</i></dt>
+        <dd>A button to <i>delete</i> the file on the ESP FS.</dd>
+
+        <dt><div class="divbutt divbuttas">View</div> <i>button</i></dt>
+        <dd>Will download the contents of the file for viewing at the end of the browser-UI page. If the file is an iamge, will display the image too.</dd>
+       </dl>
+       <img src="./imgs/listfiles.png" alt="listdirl image">
+       <p>In this SPIFFS example, a <b>file</b> appears as
+        <span style="background: #8fd8d8; color:black;">/subdir/c/dd/</span> which is a file-name representating a pseudo-directory: as injected by <i>DevFsUploadESP</i>. It will be removed by <i>DevFsUploadESP</i> if a file on the FS starts-with the directory path.
+       </p>
+      </div>
+      <br>
+      <h4>List Dir(s)</h4>
+      <div class="inddiv">
+       <p>List all the directories in the ESP's FS; with buttons for action on the directory.</p>.</p>
+
+       <dl>
+        <dt><div class="divbutt divbuttas">Select</div> <i>button</i></dt>
+        <dd>A button to <i>select</i> and set the <i>upload dirs: field</i> to this directory; sets the ESP-target-directory for upload too.</dd>
+
+        <dt><div class="divbutt">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div> <div class="divbutt divbuttas">mk-subDir</div> <i>field</i> and <i>button</i></dt>
+        <dd>Will create a sub-directory on the ESP FS which will be the 'sub-dir + <i>field</i>'.
+         <p>Only one subDir-level is allowed.</p></dd>
+
+        <dt><div class="divbutt divbuttas">rmDir</div> <i>button</i></dt>
+        <dd>Will remove the directory and its sub-directories, along with all files.
+        <p>'None reverse-able' action alert needs confirmation.</p></dd>
+       </dl>
+
+       <img src="./imgs/listdirl.png" alt="listdirl image">
+       <p>In this SPIFFS example, a <b>directory</b> appears as
+        <span style="background: #8fd8d8; color:black;">/subdir/c/dd/</span> which is a pseudo-directory: as injected by <i>DevFsUploadESP</i>. It will be removed by <i>DevFsUploadESP</i> if a file on the FS starts-with the directory path.
+       </p>
+      </div>
+     </div>
+    </div>
+   </div>
+   <!-- ---------------------------------- -->
+   <div id="content_sketchid" class="contenthide">
+    <div class="contentsection">Sketch Guild</div>
+    <h1 id="sketchh1">Sketch code (optional usage/install)</h1>
+    <div class="inddiv">
+     <ul>
+      <li><p>The <i>DevFsUploadESP</i> library folders need to be "installed" in the IDE. These are only used if they are explicited #include coded in a sketch. Thus, the libraries may remain in the IDE library folders regardless on included or not.</p>
+       <p>See: <a class="setatagtext" href="#ardinst">for IDE installation</a></p>
+      </li>
+      <li><p><i>DevFsUploadESP</i> is designed to be optionally "installed" into an Arduino IDE  sketch .ino file. The user may choose the use of SPIFFS or LittleFS to install: but not both. Two user actions are required in sketch code: (See: <a class="setatagtext" href="#exampleinst">ddd</a>.)</p>
+       <p><b>IMPORTANT</b>: (1) and (2) need to be in the same file as a #define is used to associate the two.</p>
+       <ol>
+        <li>
+         <p>"install" #include</p>
+         <p>use libraries by including a FS-explicit ".h" library; either</p>
+         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="codeb">#include &lt;DevFsUploadSPIFFS.h&gt;</span>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          or
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="codeb">#include &lt;DevFsUploadLittleFS.h&gt;</span></p>
+         <p><b>Optional</b>: If the include line is missing or commented out, the library is "not installed".</p>
+         <p>All dependent libraries will automatically be included.
+        </li>
+        <li><p>"setup" association</p>
+         <p>in the sketch's 'setup' function section associating the 'DevFsUploadUpESP::<i>handlers</i>' into the ESP server structure require the following code:</p>
+         <table class="setupdevfs"><tr><td>
+                <pre class="codeb">
+   // install DevFsUpload server handle
+#ifdef DevFsUploadInstall
+   DevFsUploadInstall(server);
+#endif</pre>
+          </td>
+          <td>OR</td>
+          <td>
+           <pre class="codeb">
+   // install DevFsUpload server handle
+#ifdef DevFsUploadInstall
+   DevFsUploadInstall(&amp;server); 
+#endif</pre>
+          </td></tr></table>
+         <p>This code may be left in place as DevFsUploadInstall is only defined if  'DevFsUploadSPIFFS.h' or 'DevFsUploadLittleFS.h' file is included in the compile.</p>
+        </li>
+       </ol>
+      </li>
+     </ul>
+     <h2 id="alturl">Alternate DevFsUploadInstall</h2>
+     <div class="inddiv">
+      <p>If a sketch-app uses '<i><b>/upload</b></i>' as a URL-path, an alternative URL-path for <i>DevFsUploadESP's</i> should be used. This is done via a 2nd parameter in the 'DevFsUploadInstall' call:</p>
+      <pre class="codeb">   // install DevFsUpload server handle
+   #ifdef DevFsUploadInstall
+       DevFsUploadInstall(server, <span class="clrmag">"/myupload"</span>);   
+       // or DevFsUploadInstall(&amp;server, <span class="clrmag">"/myupload"</span>); 
+   #endif</pre>
+      <p>URL-path to the upload page would be:
+       <span class="clrmag">&lt;ESP-host-address[:port]&gt;<b>/myupload</b></span>
+      <p>The 2nd parameter may be any appropriate string (NB: leading '/' is explicitly needed.)</p>
+
+     </div>
+     <br>
+     <h2 id="exampleinst">Example "install" code brief</h2>
+     <div class="inddiv">
+      <table class="tabexp"><tr>
+        <td>
+         <pre>Example 1
+ ------------------------------------ 
+ Server is defined as a pointer
+ which will be 'set' in the setup
+ function.                              
+ ------------------------------------
+ |  ::
+<span>+|  #include &lt;DevFsUploadLittleFS.h&gt;</span>
+ |  ..
+ |  ESP8266WebServer* server;
+ |  ..
+ |  setup(){
+ |   ..
+ |   server = new ESP8266WebServer(80);
+ |   ..
+<span>+|    // install DevFsUpload server handle</span>
+<span>+| #ifdef DevFsUploadInstall</span>
+<span>+|    DevFsUploadInstall(server);</span>
+<span>+| #endif</span>
+ |    ..</pre>
+        </td>
+        <td>
+         <pre>Example 2
+ -------------------------------------
+ Server is typically shown in examples
+ as being just after the include headers
+ section.
+ 
+ Note: &amp;server
+ -------------------------------------
+ |  ::
+<span>+|   #include &lt;DevFsUploadSPIFFS.h&gt;</span>
+ |  ..
+ |   ESP32WebServer server(80);
+ |   ..
+ |  
+ |
+ |   setup(){
+ |    ..
+<span>+|      // install DevFsUpload server handle</span>
+<span>+|   #ifdef DevFsUploadInstall</span>
+<span>+|      DevFsUploadInstall(&amp;server);  </span>  
+<span>+|   #endif</span>
+ |    ..</pre> 
+        </td>
+       </tr>
+       <tr>
+        <td colspan="2"><div>
+          <pre >
+ Example 3 (disable DevFsUpload functionality from code)
+ ------------------------------------
+ Do not include DevFsUpload'FS'.h in product deployed versions
+ OR better yet, remove the DevFsUpload lines completely
+					
+ NB: comment out ->  '// #include DevFsUpload'FS'.h'
+ -------------------------------
+ |  ::
+<span>+|  <span>//</span> #include &lt;DevFsUpload'FS'.h&gt;</span>
+ |  ..
+ |  ESP8266WebServer* server;
+ |  ..
+ |  setup(){ 
+ |   ..
+ |   server = new ESP8266WebServer(80);
+ |   ..
+<span> |    // install DevFsUpload server handle</span>
+<span> | #ifdef DevFsUploadInstall</span>
+<span> |    DevFsUploadInstall(server);</span>
+<span> | #endif </span>
+ |    ..</pre></div>
+        </td>
+       </tr></table>
+      <p>The user has nothing else to do for the sketch code.</p>
+      <br>
+      <h3>DevFsUploadInstall "under-the-hood"</h3>
+      <p><b>DevFsUploadInstall</b> causes the equivalent WebXXXXXServer code to be invoked to
+       install the necessary handle functions.</p>
+      <pre id="sketchh1_tt">
+     
+      - - - - - - - - - 
+      --- '&lt;host&gt;/upload'      GET/POST for upload action
+      --- 
+      ------ server->on("/upload", HTTP_GET, DevFsUploadESP::handleUploadPage);
+      ------ server->onFileUpload(DevFsUploadESP::handleFileUpload);
+      ------ server->on("/upload", HTTP_POST, DevFsUploadESP::handleOther);
+      ------ server->on("/ajax", HTTP_POST, DevFsUploadESP::handleAjax);
+      </pre>
+     </div>
+     <h2 id="ardinst">Arduino IDE Installation</h2>
+     <div class="inddiv">
+      <br>
+      <table><tr><td>The library folders:</td>
+        <td>
+         <b>DevFsUploadCommon</b>
+         <br><b>DevFsUploadSPIFFS</b> 
+         <br><b>DevFsUploadLittleFS</b>
+        </td></tr></table>
+      <p>should be installed into an Arduino IDE's '<i><b>libraries</b></i>' folder. [As per the IDE's practice. Please refer to Arduino IDE documentation.]
+      </p>
+      <h3>Library relationship</h3>
+      <div class="inddiv">
+
+       <table class="tabcnr">
+        <tr><td>common library</td>
+         <td colspan="2">DevFsUploadCommon.h</td>
+        </tr>
+        <tr>
+         <td></td>
+         <td colspan="2"><pre>|
++----------+----------+
+|                     |</pre>
+        </tr>
+        <tr>
+         <td>FS-explicit libraries </td>
+         <td>DevFsUploadSPIFFS.h</td>
+         <td>DevFsUploadLitteFS.h</td>
+        </tr>
+       </table>
+       <p>The use of <i>DevFsUploadESP</i> requires a user to include the FS-explicit library <b>'.h'</b>. into their project.
+       </p>
+      </div>
+     </div>
+    </div>
+   </div>
+   <!-- ---------------------------------- -->
+   <div id="content_aboutid" class="contenthide">
+    <div class="contentsection">About DevFsUploadESP</div>
+    <h1 id="abouth1">About <i>DevFsUploadESP</i></h1>
+    <div class="inddiv">
+     <p><i>DevFsUploadESP</i> is an aid used for SPIFFS or LittleFS file-systems (FS), used with Arduino IDE and ESP32/ESP8266 modules (ESP). It provides a Browser-UI to manage the FS components.</p>
+
+     <h2>Purpose</h2>
+     <div class="inddiv">
+      <p>A development aid to manage files and/or directories on an ESP file-system so a user may perform FS actions<br> &bull; without the need of an IDE,<br>&bull; via a Browser-UI.  </p>
+
+      <h3>Usages</h3>
+      <p><i>DevFsUploadESP</i> allows a user, via a browser-UI, to network to an ESP and perform file-system (FS) actions:</p>
+      <ul>
+       <li>upload file(s)/dir-structure to an ESP-target-directory</li>
+       <li>upload file(s)/dir-structure to manually defined ESP-target-directory</li>
+       <li>replace file on ESP after being editted</li>
+       <li>some basic file/directory management functionality like: delete, view, make-sub-directory, remove-directory,...</li> 
+       <li>rapid edit and re-install HTML/CSS/JS files by file upload(replacement) (basically HTML development on the fly from a PC)</li>
+      </ul>
+     </div>
+     <h2>Background</h2>
+     <div class="inddiv">
+      <p>The aid was developed to allow upload and basic management of files on an ESP's FS, which was initially SPIFFS. Since the 'DevFsUpload' library was published, an additional file system called LittleFS has been implemented on the ESP3266. With ESP32 likely in mid/late-2020. </p>
+      <p><i>DevFsUploadESP</i> provides a 'FS-common-library' to be used with a 'SPIFFS-library' or 'LittleFS-library' arrangement on an ESP-device.
+      </p>
+     </div>
+     <div id="suppconfig">
+      <h2>Supported Capability</h2>
+      <div id="suppconfigdesc" class="inddiv">
+       <p><i>DevFsUploadESP's</i> supported capability relies on other libraries, which may not be ready (as of March 2020 - ESP32 LittleFS). The following configurations are supported:</p>
+       <table class="tabconfsup">
+        <tr>
+         <td></td>
+         <td>SPIFFS</td>
+         <td>LittleFS</td>
+        </tr>
+        <tr>
+         <td>ESP8266</td>
+         <td>
+          <div>
+           <svg id="xx1" viewBox="-20 0 60 55" width="110" height="110">
+           <polygon points="4,7 7,9 10,2 11,2 8,11 3,8" fill="green"/>
+           </svg>
+          </div></td>
+         <td id="xx12">
+          <div>
+           <svg viewBox="-20 0 60 55" width="110" height="110">
+           <polygon points="4,7 7,9 10,2 11,2 8,11 3,8" fill="green"/>
+           </svg>
+          </div></td>
+        </tr>
+        <tr>
+         <td>ESP32</td>
+         <td>
+          <div>
+           <svg viewBox="-20 0 60 55" width="110" height="110">
+           <polygon points="4,7 7,9 10,2 11,2 8,11 3,8" fill="green"/>
+           </svg>
+          </div></td>
+         <td>
+          <div>
+           <svg viewBox="-20 0 60 55" width="110" height="110">
+               <polygon points="2,3 3,3 12,12 11,12" fill="red"/> 
+               <polygon points="11,3 12,3 3,12 2,12" fill="red"/> 
+           <!-- <polygon points="2,3 3,3 7,6 11,3 12,3 7,7 12,10 11,10 6,7 3,10 2,10 6,6" fill="red"/>   -->
+           </svg>
+          </div>
+         </td>
+        </tr>
+       </table>
+       <br>
+      </div>
+     </div>
+     <h2>Considerations</h2>
+     <div class="inddiv">
+      <br>
+      <h3>Defects vs design intent</h3>
+      <div class="inddiv">
+       <p><i>DevFsUploadESP</i> is a development aid and not a polished product. As such there may be nuisances for users which are design-intent. That is: is it necessary and/or would it impact ESP storage significantly.</p>
+      </div>
+
+      <h3>Limitation</h3>
+      <div class="inddiv">
+       <p>The ESP has finite storage which required design compromises: browser-UI pre-validation, ESP fault reporting, read-ability of the HTML/CSS/JS files provided to the browser,....
+       </p>
+       <p>There are others compromises, one of which is 'accessiblity' in the browser-UI. Supporting a full ease-of-accessibility would result in large amounts of storage on an ESP.<br>&nbsp;&nbsp;&nbsp;&bull; 'Tabs' between controls should work, but remain untested as each browser (FF, Chrome,...) works differently.</P>
+       <p>There are more limitations, but....</p>
+      </div>
+     </div>
+    </div>
+   </div>
+   <!-- ---------------------------------- -->
+   <div id="content_tocid" class="tocfmt contenthide">
+    <div class="contentsection">T O C</div>
+    <div id="tocsect"><p>Table of Contents<p></div>
+   </div>
+
+   <footer><div id="copyright">Copyright &copy; 2020 dbradley.</div></footer>
+  </div>
+
+ </BODY>
+</HTML>

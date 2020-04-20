@@ -1,0 +1,184 @@
+/* Copyright (c) 2020 dbradley */
+
+
+/* heading and tag generic styles */
+body {font-size: 12pt; font-family: arial,sans-serif;} 
+     
+h1 {font-size: 1.3em;margin-top: 10px;margin-bottom: 0;}
+h2 {font-size: 1.2em;margin-top: 0;margin-bottom: 0;}
+h3 {  font-size: 1.1em;margin-top: 0;margin-bottom: 0;}
+h4 {font-size: 1.0em;margin-top: 0;margin-bottom: 0;}
+h5, h6 {font-size: 0.9em;margin-top: 0;margin-bottom: 0;}
+
+dl dd{margin-top: 3px;margin-bottom: 15px;}
+
+td{vertical-align: top;}
+figure{margin-left: 0;}
+img, figure{margin-top: 0;}
+img{border: 1px solid;}
+
+table pre{
+margin-top: 0;
+margin-bottom:0;
+}
+
+/* the following are control classes, does nothing but is used by
+   script to build items from within the document, or see hide 
+   div element
+   */
+.nohdgtoc{}  /* no heading -- table-of-contents */
+.nohdgnum{}  /* no heading -- number */
+
+.tocfmt p{margin-top: 5px; margin-bottom: 0px;}
+
+.tabshide{background: lightblue;}
+.tabssee{background: white;}
+
+.contenthide{display:none;}
+.contentsee{
+    display:block;
+    padding-left: 5px; 
+    padding-top: 10px;
+    bottom: 50px;
+}
+
+.contentsection{} /* used to identify a DIV that is a content-section and represents a TAB item */
+
+.setatagtext{}  /*  used to get the text of a TOC item */
+   
+/* styles for various elements of the documentation */   
+
+.inddiv{padding-left: 15px;}
+
+.tabcnr td{text-align: center; padding-right:30px;}
+.tabcnr td:nth-child(n+2){font-family: monospace;}
+.tabcnr pre,
+.tabcnf td{margin-bottom:0; margin-top:0;}
+
+.tabexp td{font-family: monospace;}
+.tabexp div{text-align: center;}
+.tabexp div pre{display:inline-block; text-align: left;}
+.tabexp span{color: #a85c32; font-weight: bold;}
+.tabexp span span{background: lightblue;}
+
+.secttoo p{margin-bottom: 0;}
+
+.tabupld{margin-top: 0;margin-left: 15px;}
+.tabupld tr td{padding-left: 15px;}
+.tabupld span{color: magenta;}
+.tabupld tr:nth-child(-n+2) td{padding-bottom:15px;}
+
+.tabendis td{padding-right: 30px;}
+
+
+.tabconfsup{
+    margin-left: 150px;
+}
+.tabconfsup td{vertical-align: middle;
+}
+.tabconfsup td:nth-child(n+2){text-align: center;}
+.tabconfsup tr:nth-child(n+2) td:nth-child(1){
+    border-right: 1px solid;
+    padding-right: 15px;
+}
+.tabconfsup tr:nth-child(1) td:nth-child(n+2){
+    border-bottom: 1px solid;
+    text-align: center;
+}
+
+.tabconfsup div{height:30px;}
+
+.pgfield span{
+    background: magenta;
+    font-weight: bold;
+    color: white;
+    padding-left: 5px;
+    padding-right:5px;
+}
+
+.clrmag{color:magenta;}
+
+.nbhang{padding-left: 4ch; text-indent: -4ch;}
+.warninghang{padding-left: 9ch;text-indent: -9ch;color: red;}
+.warn{color: red;font-weight: bold;}
+
+.libinsthang{padding-left: 24ch; text-indent: -24ch;}
+
+.spfsbkg{background: lightblue;}
+
+.divbutt{
+    background: magenta;
+    display: inline-block;
+    padding-right: 5px;
+    padding-left: 5px;
+    text-align:center;
+    color: white;
+    font-weight: bold;
+}
+.divbuttas{border-radius: 25px;}
+.pretight{margin-top: 0;margin-bottom:0;}
+
+.tabspvslts td {padding-right: 5ch;}
+.tabspvslts td {padding-right: 5ch;}
+.tabspvslts .trpad td {padding-top: 15px;}
+.tabspvslts th:nth-child(n+2) {text-align: left; padding-left: 50px; border-bottom: 1px solid;}
+.tabspvslts span {color: magenta; background: white;}
+
+.codeb{font-family: monospace;font-weight: bold; color: #a85c32;}
+
+
+.divtabszone{
+height: 30px; 
+margin-top: 5px;
+position: fixed;
+top: 0;
+}
+
+.divcontentcontainer{
+    border-top: 1px solid;
+    position: fixed;
+    top: 0;
+    bottom: 25px;
+    margin-top: 41px;
+    overflow: auto;
+    height: auto;
+}
+
+.tabsbtt{
+    font-size: 1.2em; 
+    border: 2px solid lightgray;
+    margin: 0px 0px 0px 0px;
+    padding: 5px 5px 5px 5px;
+    border-top-left-radius:15px;
+    border-top-right-radius:15px;
+    float: left;
+}
+.divtabszone .msgdiv{
+    position: fixed;
+    right: 10px;
+    font-size: 0.7em;
+}
+
+.tabsbtt:focus{border: 2px solid blue;}
+.tabsbtt:hover{cursor: pointer;}
+
+.prtfocx{
+    border: 1px solid grey;
+    border-radius: 5px;
+    text-align: center;
+    width: 85%;
+    background: azure;
+    padding-bottom: 2px
+}
+.prtfocx:hover{cursor: pointer;}
+
+.tabcpyrgt{
+    font-size: 0.7em;
+    position: fixed;
+    bottom: 10px;
+    right:20px;
+}
+
+.setupdevfs td{ padding-right: 30px;}
+.setupdevfs td:nth-child(2){ vertical-align: middle;}
+
