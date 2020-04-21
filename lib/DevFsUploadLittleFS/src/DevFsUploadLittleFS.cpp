@@ -112,7 +112,7 @@ File DevFsUploadESP::openFile4WriteTargeted(String fn){
 	
 // LIttleFS 
 File DevFsUploadESP::openFile4ReadTargeted(String fn){
-	return LittleFS.open(viewFileName, "r");
+	return LittleFS.open(fn, "r");
 }
 
 // LittleFS

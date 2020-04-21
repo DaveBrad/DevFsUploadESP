@@ -329,8 +329,13 @@ class DevFsUploadESP {
     static void doctypeBody(WiFiClient client);
 
     static void clientPrtLn(WiFiClient client, int lenArr, const char* arr[]);
+    
+    static String simpleErrorMsg;
 
     // method to process the view-file request via HTTP
     static void processViewFile();
+    
+    // method to process for download to browser client
+    static boolean processDownload(String fn);
 };
 #endif

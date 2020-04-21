@@ -22,7 +22,7 @@ file is suspect.
 
 #ifdef ESP32
 // #include <ESP32WebServer.h>
-// #include <SPIFFS.h>
+#include <SPIFFS.h>
 
 #else
 // #include <ESP8266WebServer.h>
@@ -148,7 +148,7 @@ File DevFsUploadESP::openFile4WriteTargeted(String fn){
 
 //SPIFFS 
 File DevFsUploadESP::openFile4ReadTargeted(String fn){
-	return SPIFFS.open(viewFileName, "r");
+	return SPIFFS.open(fn, "r");
 }
 
 //SPIFFS
@@ -167,7 +167,7 @@ void DevFsUploadESP::mkDirFSTargeted(String nuDirFullPath){
    File mkdirFile = SPIFFS.open(nuDirFullPath + "/", "w");
 
    if (!mkdirFile) {
-      Serial.println("fail mkdir");
+      // can not do anything Serial.println("fail mkdir");
    } else {
       mkdirFile.close();
    }

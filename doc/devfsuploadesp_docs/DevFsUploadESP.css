@@ -182,3 +182,6 @@ top: 0;
 .setupdevfs td{ padding-right: 30px;}
 .setupdevfs td:nth-child(2){ vertical-align: middle;}
 
+.small{
+    font-size: 0.8em;
+}

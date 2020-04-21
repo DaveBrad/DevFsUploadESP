@@ -44,7 +44,7 @@ boolean DevFsUploadESP::uploadAction = false;
 boolean DevFsUploadESP::listFilesAction = false;
 boolean DevFsUploadESP::listDirsAction = false;
 
-// SPIFFS file names may not exceed 32 chars [31 + \0] of a char string
+// SPIFFS/LittleFS file names may not exceed 32 chars [31 + \0] of a char string
 String DevFsUploadESP::viewFileName;
 File DevFsUploadESP::fsUploadFile;
 
@@ -58,16 +58,18 @@ const char* DevFsUploadESP::lastFileTable2 = "<table class='tab'><tr><th>File na
 
 const char* DevFsUploadESP::uploadAccessDefault = "/upload";
 
+String DevFsUploadESP::simpleErrorMsg = "";
+
 
 /**
     ***** BELOW *****
-    
+
     Code has been really compressed to save storage space.
-    
+
     This makes it hard to read in this context, but saves 100's of bytes
     PROGMEM and variable space. My normal verbose coding style (documented code)
     would result in too much storage.
-    
+
     NOTE: The array constructs store into PROGMEM, but do have some variable
           stack space impacts too.
 */
@@ -88,7 +90,7 @@ const char* DevFsUploadESP::uploadAccessDefault = "/upload";
   NB: extra whitespace is removed for ESP storage optimization.
 */
 const char* DevFsUploadESP::doctypeHTMLArr1[] = {
-    /* Arduino IDE places this into PROGMEM without the keyword */
+  /* Arduino IDE places this into PROGMEM without the keyword */
 
   "<!DOCTYPE HTML><html lang='en'><head><meta charset='UTF-8'>",
 
@@ -121,14 +123,14 @@ const char* DevFsUploadESP::doctypeHTMLArr1[] = {
 };
 
 const char* DevFsUploadESP::doctypeHTMLArr2[] = {
-    /**
-      global variables that are used in building script content dynamically
-      via the @n@ architecture
-    */
+  /**
+    global variables that are used in building script content dynamically
+    via the @n@ architecture
+  */
   "@<script>var g_ajax=\"@3@\";\
 var g_psudo=\"style='font-style:italic;background:#8fd8d8;'\" ;",
-  
-   /** function gE
+
+  /** function gE
 
     Get element 'by id' as a function saves considerable bytes of
     script text.
@@ -144,10 +146,10 @@ var g_psudo=\"style='font-style:italic;background:#8fd8d8;'\" ;",
      storage usage.
 
     Code has been really compressed to save storage space.
-    
+
     s    value of dirroot
     isD  isDirValid
-    
+
     ufE  up-file-element    ufB up-file-button state   ufI up-file-input state
     udE  up-dir-element     udB up-dir-button state    udI up-dir-input state
   */
@@ -178,7 +180,7 @@ gE('updirbtt').disabled=udB;\
 
   /**
      function that resets the browse-selected setting
-     
+
 
     Code has been really compressed to save storage space.
   */
@@ -245,7 +247,9 @@ if(fn.endsWith(\"/\"))s+=g_psudo;\
 s+=\"type='text' name='fn' readonly value='\"+fn+\"' size='\"+len+\"'></div>\
 <div class='tdi siz'>\"+siz+\"</div>\
 <div class='tdi'><input class='btt' type='submit' name='delete' value='Delete'></div>\
-<div class='tdi'><input class='btt' type='submit' name='view' value='View'></div></form>\";\
+<div class='tdi'><input class='btt' type='submit' name='view' value='View'></div>\
+<div class='tdi'><input class='btt' type='submit' name='down' value='Download'></div>\
+</form>\";\
 tab.insertAdjacentHTML('beforeend', s);",
   "}\
 }",
@@ -368,12 +372,12 @@ return confirm(s);\
     NB: coding style using '\' optimizes both ESP program storage and global
       variable use. Retain the style and check if making changes for increased
     storage usage.
-    
+
     ss - set state for disabled condition
     em - error message
 
     Code has been really compressed to save storage space.
-    
+
     vE  ele.value
     ss  set-state to
     em  error-message
@@ -423,9 +427,9 @@ if(upFld.value.endsWith(\"/\"))hndlAjax(upFld.value);\
     storage usage.
 
     Code has been really compressed to save storage space.
-    
+
     Do nothing on return from the server
-    
+
     h http-object
   */
   "function hndlAjax(dn){\
@@ -439,7 +443,7 @@ h.onreadystatechange=function(){};\
 h.send(params);\
 }",
 
-   /* done so other scripts are added prior */
+  /* done so other scripts are added prior */
   "</script></head><body onload='sortTab();'>"
 
 };
@@ -570,10 +574,10 @@ void DevFsUploadESP::setDirSelected(String setStr) {
 #ifdef ESP32
 void DevFsUploadESP::setupUpLoad(ESP32WebServer* serverP) {
 #else
-void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP) {   
+void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP) {
 #endif
   // default 'ipaddr'/upload
-    DevFsUploadESP::setupUpLoad(serverP, uploadAccessDefault);
+  DevFsUploadESP::setupUpLoad(serverP, uploadAccessDefault);
 }
 
 
@@ -584,16 +588,16 @@ void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP) {
 // although the above and below can be put together, separate is better code maintanance
 #ifdef ESP32
 void DevFsUploadESP::setupUpLoad(ESP32WebServer* serverP, const char* access) {
-#else    
+#else
 void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP, const char* access) {
 #endif
 
   // OPTIMIZATION   from ->  String ajaxAccess = String(access) + "ajax";
   String ajaxAccess = String(access);
   ajaxAccess += "ajax";
-  
+
   atatArr[AJAX_HANDLER_ADDR] = ajaxAccess;
-  
+
   //  record the server object for use within this class
   serverPabc = serverP;
 
@@ -605,7 +609,7 @@ void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP, const char* access) 
   //
   //      2a implies POST action/form and once the upload is
   //      complete the regular POST action happens with no parameters
-  //  
+  //
   serverPabc->on(access, HTTP_GET, DevFsUploadESP::handleUploadPage); // 1a
   serverPabc->onFileUpload(DevFsUploadESP::handleFileUpload);            // 2a
   serverPabc->on(access, HTTP_POST, DevFsUploadESP::handleOther);
@@ -617,6 +621,11 @@ void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP, const char* access) 
    Along with any file-list or error information.
 */
 void DevFsUploadESP::handleUploadPage() {
+  // initialize page/project title information once
+  if (atatArr[TITLE_FS_TYPE_IDX] == "") {
+    // set once only
+    atatArr[TITLE_FS_TYPE_IDX] = String(DevFsUploadESP::projTitleTarget);
+  }
   // has dual purpose as 'initial page' and 'on upload completed'
   // for an upload selection
 
@@ -632,81 +641,83 @@ void DevFsUploadESP::handleUploadPage() {
   DevFsUploadESP::respondHttp200(client, true);
   DevFsUploadESP::doctypeBody(client);
 
+  // do we have a simple error condition to report
+  if (simpleErrorMsg != "") {
+    client.println(simpleErrorMsg);
+    simpleErrorMsg = "";
 
-  if (atatArr[TITLE_FS_TYPE_IDX] == "") {
-    // set once only
-    atatArr[TITLE_FS_TYPE_IDX] = String(DevFsUploadESP::projTitleTarget);
-  }
-  clientPrtLn(client, sizeof(mainPgArr) / sizeof(mainPgArr[0]), mainPgArr);
+  } else {
+    clientPrtLn(client, sizeof(mainPgArr) / sizeof(mainPgArr[0]), mainPgArr);
 
-  if (uploadAction) {
-    if (upldFileList != "") {
-      client.println("<br>Last upload:");
-      client.println(upldFileList);
+    if (uploadAction) {
+      if (upldFileList != "") {
+        client.println("<br>Last upload:");
+        client.println(upldFileList);
 
-      // reported once only
-      upldFileList="";
-      uploadStarted=false;
+        // reported once only
+        upldFileList = "";
+        uploadStarted = false;
+      }
+      if (errUpl != "") {
+        String s = "<div>";
+        s += errUpl;
+        s += errUplAdd;
+        s += "</div>";
+
+        client.println(s);
+
+        // reported once
+        errUpl = "";
+        errUplAdd = "";
+        uploadStarted = false;
+      }
+      uploadAction = false;
     }
-    if (errUpl != "") {
-      String s = "<div>";
-      s += errUpl;
-      s += errUplAdd;
-      s += "</div>";
+    // zone for the LIST and LIST DIR contents table
+    //? optimize the size of string array/const char*
+    clientPrtLn(client, sizeof(mainPgListZoneArr) / sizeof(mainPgListZoneArr[0]), mainPgListZoneArr);
 
-      client.println(s);
+    // if there is a 'list' or the file system has been changed
+    // update the list-files info
+    //
+    // "list files" info will be dynamically filled, or not
+    if (listFilesAction) {
+      //
+      client.print("<div class='scrl' tabindex='-1'><div id='lsttab' class='bof dvtb'>");
 
-      // reported once
-      errUpl = "";
-      errUplAdd = "";
-      uploadStarted = false;
+      // The above information will be changed via a client javascript 'onload'
+      // to a presentable HTML structure
+      //
+      DevFsUploadESP::listFilesOrDirsFSTargeted("/", client, true, true);
+
+      client.print("</div></div>");
+      listFilesAction = false;
     }
-    uploadAction = false;
-  }
-  // zone for the LIST and LIST DIR contents table
-  //? optimize the size of string array/const char*
-  clientPrtLn(client, sizeof(mainPgListZoneArr) / sizeof(mainPgListZoneArr[0]), mainPgListZoneArr);
+    client.println("</td><td>");
 
-  // if there is a 'list' or the file system has been changed
-  // update the list-files info
-  //
-  // "list files" info will be dynamically filled, or not
-  if (listFilesAction) {
+    // if there is a 'list dirs' or the file system has been changed
+    // update the list-dirs info
     //
-    client.print("<div class='scrl' tabindex='-1'><div id='lsttab' class='bof dvtb'>");
-    
-    // The above information will be changed via a client javascript 'onload'
-    // to a presentable HTML structure
-    //
-    DevFsUploadESP::listFilesOrDirsFSTargeted("/", client, true, true);
+    // "list dir(s)" info will be dynamically filled, or not
+    if (listDirsAction) {
+      //
+      client.print("<div class='scrl' tabindex='-1'><div id='lstdirtab' class='bof dvtb'>");
 
-    client.print("</div></div>");
-    listFilesAction = false;
-  }
-  client.println("</td><td>");
-  
-  // if there is a 'list dirs' or the file system has been changed
-  // update the list-dirs info
-  //
-  // "list dir(s)" info will be dynamically filled, or not
-  if (listDirsAction) {
-    //
-    client.print("<div class='scrl' tabindex='-1'><div id='lstdirtab' class='bof dvtb'>");
-    
-    // The above information will be changed via a client javascript 'onload'
-    // to a presentable HTML structure
-    //
-    DevFsUploadESP::listFilesOrDirsFSTargeted("/", client, false, true);
+      // The above information will be changed via a client javascript 'onload'
+      // to a presentable HTML structure
+      //
+      DevFsUploadESP::listFilesOrDirsFSTargeted("/", client, false, true);
 
-    client.print("</div></div>");
-    listDirsAction = false;
-  }
-  client.println("</td></tr></table>");
+      client.print("</div></div>");
+      listDirsAction = false;
+    }
+    client.println("</td></tr></table>");
 
-  if (viewFileName != "") {
-    processViewFile();
-    // reset the file being viewed
-    viewFileName = "";
+    if (viewFileName != "") {
+      processViewFile();
+      // reset the file being viewed
+      viewFileName = "";
+    }
   }
   client.println("</body></html>");
   client.stop();
@@ -729,9 +740,9 @@ void DevFsUploadESP::respondHttp200(WiFiClient client, boolean htmlText) {
    This includes styles, scripts in the head and the body line
 */
 void DevFsUploadESP::doctypeBody(WiFiClient client) {
-    // header and <style> stuff
+  // header and <style> stuff
   clientPrtLn(client, sizeof(doctypeHTMLArr1) / sizeof(doctypeHTMLArr1[0]), doctypeHTMLArr1);
-  
+
   // <script> stuff
   clientPrtLn(client, sizeof(doctypeHTMLArr2) / sizeof(doctypeHTMLArr2[0]), doctypeHTMLArr2);
 }
@@ -752,7 +763,7 @@ String DevFsUploadESP::alterString(String altered) {
 
     int pos2ndIndex = altered.indexOf("@", pos1stIndex + 1);
     if (pos2ndIndex == -1 ) break;
-      
+
     // pos1st...........V
     // pos2nd...............V
     // extract the key '@nn@' => 'nnn'
@@ -771,19 +782,19 @@ String DevFsUploadESP::alterString(String altered) {
 
 /**
    Print a line to the WiFi client, with preprocessing for any @n@ processing.
-   
+
    An example of a call to this method:
      clientPrtLn(client, sizeof(mainPgArr) / sizeof(mainPgArr[0]), mainPgArr);
-   
+
    Note: 'sizeof' is compile-time calculation on a 'const char* arr[]' structure
          so attempting to calculate length-of-array at
-         runtime does not work in C.   
+         runtime does not work in C.
 */
 void DevFsUploadESP::clientPrtLn(WiFiClient client, int lenArr, const char* arr[]) {
-  for (int i=0; i < lenArr; i++) {
+  for (int i = 0; i < lenArr; i++) {
     if (arr[i][0] == '@') {
       // need to alter the line for information
-      String alterLineStr=arr[i];
+      String alterLineStr = arr[i];
 
       // remove the leading '@' and alter-the-string
       client.println(alterString(alterLineStr.substring(1)));
@@ -806,7 +817,7 @@ void DevFsUploadESP::sendComplete() {
   handler for processing list, delete or view,.... requests
 */
 void DevFsUploadESP::handleOther() {
-  uploadAction=(serverPabc->args() == 0);
+  uploadAction = (serverPabc->args() == 0);
 
   if (uploadAction) {
     // assume on-file-upload has completed its request and
@@ -815,14 +826,14 @@ void DevFsUploadESP::handleOther() {
     upldFileList += "</table>";
 
   } else {
-    // either list request overrides anything else 
+    // either list request overrides anything else
     // ('list' are mutually exclusive)
-    listFilesAction=serverPabc->hasArg("list");
-    listDirsAction=serverPabc->hasArg("listdir");
+    listFilesAction = serverPabc->hasArg("list");
+    listDirsAction = serverPabc->hasArg("listdir");
 
     if (!listFilesAction && !listDirsAction) {
       // everything else
-          
+
       // process file requests if the "fn" key/arg is present
       // process directory requests if the "dn" key/arg is present
       //
@@ -835,7 +846,14 @@ void DevFsUploadESP::handleOther() {
           listFilesAction = true;
 
         } else if (serverPabc->hasArg("view")) {
-          viewFileName=serverPabc->arg("fn");
+          viewFileName = serverPabc->arg("fn");
+
+        } else if (serverPabc->hasArg("down")) {
+          // download is a self contained protocol, so this will return as the
+          // page requestinng the download is unaffected.
+          if (processDownload(serverPabc->arg("fn"))) return;
+
+          simpleErrorMsg = "Download failure";
         }
 
       } else if (serverPabc->hasArg("dn")) {
@@ -854,10 +872,10 @@ void DevFsUploadESP::handleOther() {
           listDirsAction = true;
 
           if (serverPabc->hasArg("dnsub")) {
-             if(serverPabc->arg("dnsub") != ""){
-                // make the directory with the full-paths
-                mkDirFSTargeted(serverPabc->arg("dn") + serverPabc->arg("dnsub"));
-             }
+            if (serverPabc->arg("dnsub") != "") {
+              // make the directory with the full-paths
+              mkDirFSTargeted(serverPabc->arg("dn") + serverPabc->arg("dnsub"));
+            }
           }
 
         } else if (serverPabc->hasArg("rmdir")) {
@@ -915,6 +933,32 @@ void DevFsUploadESP::processViewFile() {
     client.println("<img src='.." + viewFileName + "' alt='missing img'>");
   }
 }
+
+/**
+  process the file and download it to the browser-client for saving
+
+  return true is success, false for failure
+*/
+boolean DevFsUploadESP::processDownload(String fn) {
+  // SPIFFS and LittleFS are slightly different for open
+  File f = openFile4ReadTargeted(fn);
+
+  int idx = fn.lastIndexOf("/");
+  if (!f || idx == -1) {
+    return false;
+  }
+  // may download the file, but provide filename without path
+  String fnNoPath = fn.substring(idx + 1);
+
+  serverPabc->sendHeader("Content-Type", "text/text");
+  serverPabc->sendHeader("Content-Disposition", "attachment; filename=" + fnNoPath);
+  serverPabc->sendHeader("Connection", "close");
+  serverPabc->streamFile(f, "application/octet-stream");
+  f.close();
+
+  return true;
+}
+
 /**
   handleAjax call for the directory selected request
 */
@@ -931,7 +975,7 @@ void DevFsUploadESP::handleAjax() {
       setDirSelected(serverPabc->arg("fn"));
     }
   }
-  WiFiClient client=serverPabc->client();
+  WiFiClient client = serverPabc->client();
   DevFsUploadESP::respondHttp200(client, true);
   client.println("okay");
   client.stop();
@@ -1001,7 +1045,7 @@ void DevFsUploadESP::handleFileUpload() {
       upldFileList += "<tr><td>";
       upldFileList += fn;
       upldFileList += "</td>";
-      
+
       // Open the file for writing in SPIFFS/LittleFS and overwrite
       // (create if it doesn't exist)
       //
@@ -1028,4 +1072,3 @@ void DevFsUploadESP::handleFileUpload() {
 //
 // Because there are directories, the openDir method behaves differently than SPIFFS. Whereas SPIFFS will return files in “subdirectories” when you traverse a Dir::next() (because they really aren’t subdirs but simply files with “/”s in their names), SPIFFS will only return files in the specific subdirectory. This mimics the POSIX behavior for directory traversal most C programmers are used to.
 
-   

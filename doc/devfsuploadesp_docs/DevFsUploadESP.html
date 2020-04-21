@@ -25,6 +25,7 @@
      <h2>URL to upload-page</h2>
      <div class="inddiv secttoo">
       <p>A URL to the ESP32/8266 host-address, port &amp; path provides access to the upload-page. Depending on how <i>Station-mode</i> or <i>AP-mode</i> are coded then both modes may function.</p>
+   
       <br>
       <table class="tabupld"><tr>
         <td><span>&lt;ESP-host-address[:port]&gt;&lt;path&gt;</span></td>
@@ -44,13 +45,17 @@
        </tr></table>
 
       <p>The initial upload-page is as below and is basic functionality, along with information about the FS and ESPnnnn.</p>
-      <p>File or directory functionally is part of <i>List Files</i> or <i>List Dir(s)</i> usage.
+      <p>File or directory functionally is part of <i>List Files</i> or <i>List Dir(s)</i> usage.</p>
+      <p class="nbhang small"><i>NB: The browser images used in this document are from Firefox use. Other browse's may present slightly differently, but  fundamentally present the same elements.</i></p>
+      <br>
       <figure>     
-       <br>
        <img  src="./imgs/initialpage.png" alt="missing img">
        <figcaption>Fig.1 - upload-page</figcaption>
       </figure>
+      
+     
      </div>
+     <br>
      <h2>Upload-page Description</h2>
      <br>
      <div class="inddiv">
@@ -70,8 +75,20 @@
        </div>
        <h4>Browse and Upload file(s)/Directory</h4>
        <div class="inddiv">
-        <br>
-        <img src="./imgs/browse-upload.png" alt="browse/upload image">
+       <p>Below shows the differences between 'Browser' display of the generic HTML used for upload of files or directories. Having a consistent display in <i>DevFsUploadESP</i> is outside its scope. (Too much storage.)</p>
+       <p class="nbhang">NB: Below represents 'no file or directory' selection. This document will refer to Firefox display terms for simplity (please use below figures for comparison  of browsers).</p>
+        <figure>
+        <figcaption>Firefox</figcaption>
+        <img src="./imgs/browse-upload-ff.png" alt="browse/upload image">
+        </figure>
+        <figure>
+        <figcaption>Google Chrome</figcaption>
+        <img src="./imgs/browse-upload-chrome.png" alt="browse/upload image">
+        </figure>
+        <figure>
+        <figcaption>MS Edge</figcaption>
+        <img src="./imgs/browse-upload-edge.png" alt="browse/upload image">
+        </figure>
         <div class="pgfield">
          <p>This set of buttons supports prior acquire of files/directory information, and then explicit upload action.</p>
          <dl>
@@ -192,6 +209,10 @@
 
         <dt><div class="divbutt divbuttas">View</div> <i>button</i></dt>
         <dd>Will download the contents of the file for viewing at the end of the browser-UI page. If the file is an iamge, will display the image too.</dd>
+
+        <dt><div class="divbutt divbuttas">Download</div> <i>button</i></dt>
+        <dd>Will download the file as per a browser's manner. [Firefox, Chrome, Edge,... all work slightly different, but do the same thing.]
+        <p class="warninghang">Warning: If an attempt to download has a failure of any kind, there will be a simple error message.</p></dd>
        </dl>
        <img src="./imgs/listfiles.png" alt="listdirl image">
        <p>In this SPIFFS example, a <b>file</b> appears as
@@ -201,15 +222,14 @@
       <br>
       <h4>List Dir(s)</h4>
       <div class="inddiv">
-       <p>List all the directories in the ESP's FS; with buttons for action on the directory.</p>.</p>
-
+       <p>List all the directories in the ESP's FS; with buttons for action on the directory.</p>
        <dl>
         <dt><div class="divbutt divbuttas">Select</div> <i>button</i></dt>
         <dd>A button to <i>select</i> and set the <i>upload dirs: field</i> to this directory; sets the ESP-target-directory for upload too.</dd>
 
         <dt><div class="divbutt">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div> <div class="divbutt divbuttas">mk-subDir</div> <i>field</i> and <i>button</i></dt>
-        <dd>Will create a sub-directory on the ESP FS which will be the 'sub-dir + <i>field</i>'.
-         <p>Only one subDir-level is allowed.</p></dd>
+        <dd>Will create a sub-directory on the ESP FS which will be the 'sub-dir + <i>field</i>'. Only one subDir-level is allowed.
+        <p class="warninghang">Warning: If the mkdir fails, no error message will be provided.</p></dd>
 
         <dt><div class="divbutt divbuttas">rmDir</div> <i>button</i></dt>
         <dd>Will remove the directory and its sub-directories, along with all files.
