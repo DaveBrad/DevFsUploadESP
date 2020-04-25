@@ -1,5 +1,9 @@
 /* Copyright (c) 2018-2020 dbradley. */
 
+// #ifdef DevFSUploadSPIFFS_h
+// #error "stst fould"
+// #endif
+
 #ifndef DevFSUploadCommon_h
 #define DevFSUploadCommon_h
 
@@ -256,7 +260,7 @@ class DevFsUploadESP {
       as their return. DevFsUpload extracts what datum it requires
       and then continues with 'common' code/processing.
     */
-    static void listFilesOrDirsFSTargeted (String dirname, WiFiClient client, boolean listFiles, boolean startingAtRoot);
+    static void listFilesOrDirsFSTargeted (String dirname, WiFiClient client, boolean listFiles);
     static void rmDirFSTargeted(String dirname);
     static void mkDirFSTargeted(String nuDirFullPath);
     static File openFile4WriteTargeted(String fn);
@@ -288,13 +292,12 @@ class DevFsUploadESP {
     static char* errUpl;
     static String errUplAdd;
 
-    // the file name og the a request to view the contents of a file
-    static String viewFileName;
-
     // the directory on the ESP that is selected (when a file upload request
     // is recieved only the file name is provided, this variable holds
     // the directory or sub-directory to store the file(s) too)
 	static void setDirSelected(String setStr);
+    
+    static String selectedDir;
 
     // HTML code for the processing of files
     static const char* lastFileTable1;
@@ -303,11 +306,8 @@ class DevFsUploadESP {
     static const char* doctypeHTMLArr1[];
     static const char* doctypeHTMLArr2[];
 
-    // the main page has three sections which require ESP server data
+    // the main page has zones
     //
-
-    static String atatArr[];
-
     static const char* mainPgArr[];
     static const char* mainPgListZoneArr[];
 
@@ -316,7 +316,7 @@ class DevFsUploadESP {
     // WebServer handler methods
     static void handleUploadPage(); // main page
     static void handleFileUpload(); // post upload
-    static void handleAjax();       // post ajax requests
+    static void handlerAjax();      // post ajax requests
 
     static void handleOther(); // requests and the such
 
@@ -326,14 +326,17 @@ class DevFsUploadESP {
     // --- text
     static void sendComplete();
     static void respondHttp200(WiFiClient client, boolean htmlText);
+    static void respondHttp200(WiFiClient client, boolean htmlText, int length);
     static void doctypeBody(WiFiClient client);
+    
+    static void processLists(WiFiClient client);
 
     static void clientPrtLn(WiFiClient client, int lenArr, const char* arr[]);
     
     static String simpleErrorMsg;
 
     // method to process the view-file request via HTTP
-    static void processViewFile();
+    static void processViewFile(String filePath);
     
     // method to process for download to browser client
     static boolean processDownload(String fn);

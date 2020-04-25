@@ -31,14 +31,8 @@ file is suspect.
 
 const char* DevFsUploadESP::projTitleTarget = "SPIFFS";
 
-void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client, boolean listFiles, boolean startingAtRoot) {
+void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client, boolean listFiles) {
 
-  // listing directories will have a root, so need to output it explicitly
-  if (!listFiles) {
-    if (startingAtRoot) {
-      client.println("<div>/ 0</div>");
-    }
-  }
   // open a directory for processing and then process through the
   // contents to get files or directory information
 #define MAX_DIR_SUPPORTED 100
@@ -125,16 +119,9 @@ void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client
       // dirNam += "/";
       // }
       // list directory
-      String str = "<div>" + dirNam  + " ";  // 0</div>";
+      String str = "<div>" + dirNam  + " " + (isFileAsPseudoDir ?  "1" : "0")
+      + "</div>";
 
-      // detect pseudo directories and present differently to the
-      // client side for indicating as such
-      if (isFileAsPseudoDir) {
-        str += "1";
-      } else {
-        str += "0";
-      }
-      str += "</div>";
       client.println(str);
     } // end while
   }
@@ -166,9 +153,7 @@ void DevFsUploadESP::mkDirFSTargeted(String nuDirFullPath){
    SPIFFS.mkdir(nuDirFullPath);
    File mkdirFile = SPIFFS.open(nuDirFullPath + "/", "w");
 
-   if (!mkdirFile) {
-      // can not do anything Serial.println("fail mkdir");
-   } else {
+   if (mkdirFile) {
       mkdirFile.close();
    }
 }

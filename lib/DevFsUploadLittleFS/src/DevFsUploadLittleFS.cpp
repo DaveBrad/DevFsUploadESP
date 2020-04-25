@@ -9,8 +9,6 @@
 #endif
 #endif
 
-
-
 /**  License found at: 
 
 Three other files should accompany this file so as to be valid.
@@ -44,13 +42,7 @@ file is suspect.
 
 const char* DevFsUploadESP::projTitleTarget = "LittleFS";
 
-void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client, boolean listFiles, boolean startingAtRoot) {
-  // listing directories will have a root, so need to output it explicitly
-  if (!listFiles) {
-    if (startingAtRoot) {
-      client.println("<div>/ 0</div>");
-    }
-  }
+void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client, boolean listFiles) {
   // open a directory for processing and then process through the
   // contents to get files or directory information
   Dir root = LittleFS.openDir(dirname);
@@ -95,7 +87,7 @@ void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client
         client.println(str);
       }
       // process the sub-directory
-      DevFsUploadESP::listFilesOrDirsFSTargeted(dirNam, client, listFiles, false);
+      DevFsUploadESP::listFilesOrDirsFSTargeted(dirNam, client, listFiles);
     }
   }
 }
