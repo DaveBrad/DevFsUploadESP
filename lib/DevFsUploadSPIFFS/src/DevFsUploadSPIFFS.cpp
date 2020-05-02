@@ -31,8 +31,9 @@ file is suspect.
 
 const char* DevFsUploadESP::projTitleTarget = "SPIFFS";
 
-void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client, boolean listFiles) {
+String DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, boolean listFiles) {
 
+  String content = "";
   // open a directory for processing and then process through the
   // contents to get files or directory information
 #define MAX_DIR_SUPPORTED 100
@@ -77,8 +78,8 @@ void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client
     boolean isFileAsPseudoDir = fullName.endsWith("/");
 
     if (listFiles) {
-        String str = "<div>" + fullName + " " + size + "</div>";
-        client.println(str);
+        content += "<div>" + fullName + " " + size + "</div>";
+        // client.println(str);
       continue;
     }
     // build directory list from file name, but only if
@@ -119,12 +120,13 @@ void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client
       // dirNam += "/";
       // }
       // list directory
-      String str = "<div>" + dirNam  + " " + (isFileAsPseudoDir ?  "1" : "0")
+      content += "<div>" + dirNam  + " " + (isFileAsPseudoDir ?  "1" : "0")
       + "</div>";
 
-      client.println(str);
+      // client.println(str);
     } // end while
   }
+  return content;
 }
 
 

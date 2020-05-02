@@ -42,7 +42,9 @@ file is suspect.
 
 const char* DevFsUploadESP::projTitleTarget = "LittleFS";
 
-void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client, boolean listFiles) {
+String DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, boolean listFiles) {
+    
+  String content = "";
   // open a directory for processing and then process through the
   // contents to get files or directory information
   Dir root = LittleFS.openDir(dirname);
@@ -62,8 +64,8 @@ void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client
           fullName = "/" + fullName;
         }
         // format the data into HTML format
-        String str = "<div>" + fullName + " " + size + "</div>";
-        client.println(str);
+        content += "<div>" + fullName + " " + size + "</div>";
+        // client.println(str);
 		
 		// a lot of files (not typical) could cause ESP Watch Dog Timer issue
         // thus a yield
@@ -83,13 +85,15 @@ void DevFsUploadESP::listFilesOrDirsFSTargeted(String dirname, WiFiClient client
       if (!listFiles) {
         // processing the directories to get a listing of directories
         // to the HTML UI
-        String str = "<div>" + dirNam  + "/ 0</div>";
-        client.println(str);
+        content += "<div>" + dirNam  + "/ 0</div>";
+        
+        // client.println(str);
       }
       // process the sub-directory
-      DevFsUploadESP::listFilesOrDirsFSTargeted(dirNam, client, listFiles);
+      content += DevFsUploadESP::listFilesOrDirsFSTargeted(dirNam, listFiles);
     }
   }
+  return content;
 }
 
 // LittleFS
