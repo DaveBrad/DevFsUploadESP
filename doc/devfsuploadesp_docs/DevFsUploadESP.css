@@ -46,11 +46,16 @@ margin-bottom:0;
 
 .setatagtext{}  /*  used to get the text of a TOC item */
    
-/* styles for various elements of the documentation */   
+/* styles for various elements of the documentation */  
+
+.info{font-size: 0.75em;} 
+.inln{display: inline-block;}
 
 .inddiv{padding-left: 15px;}
 
-.tabcnr td{text-align: center; padding-right:30px;}
+
+
+.tabcnr td{text-align: center;padding-right:30px;}
 .tabcnr td:nth-child(n+2){font-family: monospace;}
 .tabcnr pre,
 .tabcnf td{margin-bottom:0; margin-top:0;}
@@ -70,13 +75,11 @@ margin-bottom:0;
 
 .tabendis td{padding-right: 30px;}
 
+.tabconfsup .svgtck{float: left;}
+.tabconfsup{margin-left: 50px;}
 
-.tabconfsup{
-    margin-left: 150px;
-}
-.tabconfsup td{vertical-align: middle;
-}
-.tabconfsup td:nth-child(n+2){text-align: center;}
+.tabconfsup td{vertical-align: center; padding-top:10px;}
+/* .tabconfsup td:nth-child(n+2){text-align: center;} */
 .tabconfsup tr:nth-child(n+2) td:nth-child(1){
     border-right: 1px solid;
     padding-right: 15px;
@@ -85,8 +88,13 @@ margin-bottom:0;
     border-bottom: 1px solid;
     text-align: center;
 }
-
+.tabconfsup tr:nth-child(n+2) td:nth-child(n+4){
+  text-align: left;
+  padding-left: 15px;
+}
 .tabconfsup div{height:30px;}
+
+.inforam{font-size: 0.55em; float:right;font-style:italic; padding-bottom: 3px;}
 
 .pgfield span{
     background: magenta;
@@ -182,6 +190,8 @@ top: 0;
 .setupdevfs td{ padding-right: 30px;}
 .setupdevfs td:nth-child(2){ vertical-align: middle;}
 
-.small{
-    font-size: 0.8em;
-}
+
+.small{font-size: 0.8em;}
+.small2{font-size: 0.75em;}
+
+

@@ -1,0 +1,560 @@
+<!--Copyright (c) 2020 dbradley-->
+
+<!DOCTYPE HTML>
+<html lang='en'>
+ <!-- run-as:DevFs -DEBUG     
+       DevFs-DEBUG will retain code in line format
+       DevFs -DEBUG will compress and provide small upload 
+                    fro non-debug-mode
+ -->
+ <head>
+  <meta charset='UTF-8'>
+  <!--
+  NB: coding style using '\' optimizes both ESP program storage and global
+  variable use. Retain the style and check if making changes for increased
+  storage usage.
+
+  ->  use color code to save 2 bytes vs name
+  orangered  #ff4500
+  lightblue  #8fd8d8
+
+  b  b2 b3        button
+  dtb dro dcl     div table row cell
+  foc             focus element that is not a button
+  brw             browse+ button-field from multiple file/dir upload
+
+  -->
+  <title>DevFsUploadESP v 2</title>
+  <style>
+   /* body will not display until onload ajax code has completed and 
+      class none is removed from body tag */    
+   .none{display:none;}
+   .sel{}
+
+   .b{border-radius:15px;display:inline;}
+   .foc{border:2px solid lightgray;}
+   .brw{border:2px solid white;}
+   .foc:focus,
+   .brw:focus,
+   .b:focus{border:2px solid blue;}
+   .b2{color:red;}
+   .b3{width:0px;height:18px;padding-right:15px;background:#f2fcf9;}
+
+   .info{font-style:italic;font-size:0.8em;}
+   .bof{direction:ltr;float:left;}
+   .scrl{margin-left:24px;height:155px;overflow-y:scroll;direction:rtl;}
+
+   .dtb{display:table;}
+
+   .dro{display:table-row;}
+   .dro div:nth-child(1) input{border:0px;}
+
+   /* each 3rd row is hi-lite so as to provide clarity between lines in the
+      display, sudo class is a hi-lite for psuedo display of directory 
+      in a SPIFFS ESP file-system (DevFsUploadESP creates a file that emulates
+      the directory as a file */  
+   .dtb .dro:nth-child(3n) div,
+   .dtb .dro:nth-child(3n) div input{background:#ffffcc;}
+   
+   .sudo,
+   .dtb .dro:nth-child(3n) div .sudo{font-style: italic; background:#8fd8d8;}
+
+   .dcl{display:table-cell;padding-right:10px;}
+   .dnfrm{display:inline;}
+
+   .siz{text-align:right;}
+   .prjnam{color:#ff4500;text-decoration:underline;padding-bottom:10px;}
+   #vuid{width:85ch;}
+   #vuid p{margin-top:0;}
+
+   .tab td:nth-child(2){text-align: right;}
+  </style>
+  <script>
+   /* 
+    Typically error checking is not coded for most of the following functions 
+    as they are internal and coded to work-correctly. This implies the functions 
+    are not API compliant/worthy.
+    
+    NB: coding style using '' optimizes both ESP program storage and global
+    variable use. Retain the style and check if making changes for increased
+    storage usage.
+    
+    WARNING:
+    
+    DO NOT DECLARE GLOBAL VARIABLES using single letters.
+    */
+
+   /* function gE -- get element 'by id' as a function saves considerable bytes of
+    script text.
+    */
+   function gE(eId = '') {
+     return document.getElementById(eId);}
+
+   /*
+    Function ajax -- interacts with handlerAjax on ESP via XMLHttpRequest.
+    
+    @param action the action that the ESP is to perform and respond too
+    @param p1 [optional] POST parameter-name-1 for data item
+    @param v1 [optional] POST value for the p1 parameter
+    @param p2 [optional] POST parameter-name-2 for data item
+    @param v2 [optional] POST value for the p2 parameter
+    
+    */
+   function ajax(action, p1 = '', v1 = '', p2 = '', v2 = '') {
+     var http = new XMLHttpRequest();
+
+     // response-handling from the ESP and what performs Browser-UI changes as
+     // appropriate
+     http.onreadystatechange = function () {
+       if (this.readyState === 4 && this.status === 200) {
+
+         // on okay, nothing to do
+         if (this.responseText.startsWith('okay'))
+           return;
+
+         // these represent the display element-ids that need to be reset to
+         // empty-content (some of these fields are mutually exclusive in how they
+         //  should display)
+         ['lastupldid', 'lflsid', 'ldrsid', 'vuid'].forEach(function (s) {
+           gE(s).innerHTML = '';
+         });
+
+         // the response will be in a certain format, depending on the action
+         // response
+         var firstEq = this.responseText.indexOf("=");
+         var actionResponse = this.responseText.substring(0, firstEq);
+         var resp = this.responseText.substring(firstEq + 1).replace(/[\r|\n]/g, '');
+
+         switch (actionResponse) {
+           case 'onload':
+             // there are a number of fields that need to be updated
+             // when the page has just been loaded (data item separated by ',')
+             var arr = resp.split(',');
+
+             // the ESP file-system and the ESPnnnn as part of the title
+             // eg. 'DevFsUploadESP - SPIFFS on ESP32'
+             gE('fstyid').innerHTML = arr[0];
+
+             // selected-dir field that has the dir-root for upload ESP-target directory
+             gE('dirroot').value = arr[1];
+
+             // upload-list needs to be gotten (is yes if upload was last 
+             // action performed)             
+             if (arr[2] === 'yesupld') {
+               ajax('upldlst');
+             } else {
+               //  the page's display is allowed for the 'body' tag
+               gE('bdy').classList.remove('none');
+             }
+             return;
+
+           case 'lfiles':
+             // list-files response processing
+             gE('lflsid').innerHTML = resp;
+             sortList(true);  // files-true
+             break;
+
+           case 'ldirs':
+             // list-dirs response processing
+             gE('ldrsid').innerHTML = resp;
+             sortList(false);  // dirs-false
+             break;
+
+           case 'upldlist':
+             // uploaded files list response processing (happens onload of body)
+             gE('lastupldid').innerHTML = resp;
+             gE('bdy').classList.remove('none');
+             break;
+
+           case 'view':
+             // view of files content to be displayed on the Browse-UI
+             gE('vuid').innerHTML = resp;
+             break;
+         }
+       }
+     };
+     // prepare the POST request to the ESP
+     http.open('POST', 'ajaxESP', true);
+     http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+     // build the parameter and value information for the POST request
+     var parms = 'act';
+     parms += '=';
+     parms += action;
+     if (p1 !== "") {
+       parms += '&';
+       parms += p1;
+       parms += '=';
+       parms += v1;
+     }
+     if (p2 !== "") {
+       parms += '&';
+       parms += p2;
+       parms += '=';
+       parms += v2;
+     }
+     http.send(parms);
+   }
+
+   /*
+    function upldbts (upload-buttons) -- set upload buttons enabled when files or 
+    dir are browse-selected AND the selected-dir (dir: field) is also valid.
+    
+    */
+   function upldbts() {
+     var dirRootVal = gE('dirroot').value;
+
+     var isDirValid = dirRootVal.endsWith("/") && dirRootVal.startsWith("/");
+
+     var upFileEle = gE('upfileinp');
+     var updirEle = gE('updirinp');
+
+     // set assumed states, prior to setting the states based on valid-conditions
+     var upfileButtonState = true;
+     var updirButtonState = true;
+
+     var upfileInputState = false;
+     var updirInputState = false;
+
+     if (upFileEle.value !== '' && isDirValid) {
+       upfileButtonState = false;
+       updirInputState = true;
+     }
+     if (updirEle.value !== '' && isDirValid) {
+       updirButtonState = false;
+       upfileInputState = true;
+     }
+     // set the states
+     gE('upfilebtt').disabled = upfileButtonState;
+     upFileEle.disabled = upfileInputState;
+
+     updirEle.disabled = updirInputState;
+     gE('updirbtt').disabled = updirButtonState;
+   }
+
+   /*
+    function resetF -- resets the browse-selected setting for the appropriate form-if
+    */
+   function resetF(formid) {
+     gE(formid).reset();
+     // update the upload-button(s) states
+     upldbts();
+   }
+
+   /*
+   function arow (arrow-onkeydown) -- process the arrows key-down-event
+   for the arrows as transitions between fields of the files/dirs-list
+   UI
+   */
+   function arow() {
+   var evt = event;
+   
+     var thisEle = evt.currentTarget;
+     var idStr = thisEle.id;
+
+     // right or left arrow handling
+     //
+     // go to the next enabled field in the row
+     var isLeft = (evt.key === 'ArrowLeft');
+     if (isLeft || evt.key === 'ArrowRight') {
+
+
+       // find the row parent/grandparent and get all the
+       // elements that are next-able via the arrows
+       var ele = thisEle;
+       while (!ele.classList.contains('dro')) {
+         ele = ele.parentNode;
+       }
+       var allButtonsArr = ele.getElementsByClassName('sel');
+
+       // going to use the length of the array multiple times
+       var len = allButtonsArr.length;
+
+       var testBound = isLeft? 0 : len - 1;
+       var adjust = isLeft? -1 : 1;
+
+       // locate the thisEle idStr in the row collection and base to it for the
+       // change of focus
+       for (var i = 0; i < len; i++) {
+         var iEle = allButtonsArr[i];
+
+         if (idStr === iEle.id) {
+           // have the match, only if the bound is not matched
+           // do we adjust the focus + or - one position
+
+           while (i !== testBound) {
+             var nextEle = allButtonsArr[i + adjust];
+             if (!nextEle.disabled) {
+               nextEle.focus();
+               return;
+             }
+             i = i + adjust;
+           }
+         }
+       }
+       return;
+     }
+
+     var isUp = evt.key === 'ArrowUp';
+     if (isUp || evt.key === 'ArrowDown') {
+       // absorb the arrow action (so as to suppress the scroll
+       // happening)
+       evt.returnValue = false;
+
+       var idStrPart = idStr.substring(0, 2);
+       var idNumPart = idStr.substring(2);
+
+       // change focus to another field
+       if (isUp) {
+         idNumPart--;
+       } else {
+         idNumPart++;
+       }
+       var nuIdStr = idStrPart + "" + idNumPart;
+       var nuFocus = gE(nuIdStr);
+       if (nuFocus !== null) {
+         nuFocus.focus();
+       }
+     }
+   }
+
+   /*
+    function sortList -- sorts the file-list/file-dir(s) table for alphabetical
+    display.
+    
+    Also, inserts HTML code for controls based on raw data
+    from the ESP-server for Browser-UI presentation.
+    
+    @param isFileBool true for list-files, false list-dir(s)
+    
+    */
+   function sortList(isFileBool) {
+     var tableE = gE(isFileBool ? 'lfiles' : 'ldirs');
+     if (tableE === null)
+       return;
+
+     var arr = [];
+     while (tableE.firstChild) {
+       var node = tableE.firstChild.innerHTML;
+       if (node !== undefined) {
+         arr.push(node);
+       }
+       tableE.removeChild(tableE.firstChild);
+     }
+     arr.sort();
+     
+     // prepare to size the width of the file/dir-name field
+     // to a size just more than the actual size
+     var maxLen = 0;
+     var ss = "<style id='wth'>.wth{}</style>";
+     tableE.insertAdjacentHTML('beforeend', ss);
+     
+     for (var i = 0; i < arr.length; i++) {
+       var s = arr[i];
+       var idx = s.lastIndexOf(' ');
+       var nameV = s.substring(0, idx);  // node-name
+       var len = nameV.length + 2;
+       var sizeV = s.substring(idx + 1); // size
+       
+       // get the maximum length/width of the 
+       if(len > maxLen){
+          maxLen = len;
+       }
+       // prepare for the row for data
+       s = "<div class='dro'><div class='dcl'>";
+       
+       // the width size needs to be set
+       s += "<input class='wth ";
+       if (isFileBool && nameV.endsWith("/") || !isFileBool && sizeV === "1") {
+         s += "sudo ";
+       }
+       s += "'type='text' readonly tabindex='-1' value='" + nameV + "'>";
+       
+       if (isFileBool) {
+         // file-table content
+         //
+         s += "</div><div class='dcl siz'>" + sizeV + "</div><div class='dcl'>";
+         s += "<button id='";
+         s += "vb" + i;
+         s += "' class='sel b' onclick=\"ajaxFn('view', this);\"  onkeydown='arow();'>View</button>";
+         s += "<form class='dnfrm' method='post'>";
+         s += "<input type='hidden' name='fn' readonly value='" + nameV + "'>";
+         s += "<button id='";
+         s += "db" + i;
+         s += "' class='sel b' onkeydown='arow();' type='submit' name='down'>Download</button>";
+         s += "</form>";
+         s += "<button id='";
+         s += "eb" + i;
+         s += "' class='sel b' onkeydown='arow();' onclick=\"ajaxFn('delete', this);\">Delete</button>";
+         s += "</div>";
+       } else {
+         // dir-table content
+         //
+         s += "<button id='";
+         s += "sl" + i;
+         s += "' class='sel b' name='seldir' onkeydown='arow();' onclick=\"setDf('" + nameV + "');\">Select</button></div>";
+
+         // mk-subdir & rmdir
+         s += "<div class='dcl'>";
+         s += "<input id='";
+         s += "in" + i;
+         s += "' class='sel foc' type='text' autocomplete='off' name='dnsub' value='' tabindex='0' onkeydown='arow();' oninput='mkval(this);'>";
+
+         s += "<button id='";
+         s += "mk" + i;
+         s += "' class='sel b' disabled onkeydown='arow();'  onclick='ajaxMkdr(this);'>mk-subDir</button>";
+
+         s += "<button id='";
+         s += "rm" + i;
+         s += "' class='sel b b2' onkeydown='arow();' onclick='ajaxRmdir(this);'\>rmDir</button>";
+         s += "</div>";
+       }
+       tableE.insertAdjacentHTML('beforeend', s);
+     }
+     // modify the width 'style' for the maximum length
+     var wth = document.getElementById('wth');
+     
+     s = ".wth{width:";
+     s +=  maxLen;
+     s += "ch;max-width:";
+     s += maxLen;
+     s += "ch;}";
+     
+     wth.innerHTML = s;
+   }
+
+   /*
+    function setDf (set-dir-field) -- which sets the select-dir field (dir:) and
+    performs ajax action to the upload-server
+    */
+   function setDf(dn) {
+     ajax('seldir', 'dn', dn);
+     gE('dirroot').value = dn;
+   }
+
+   /*
+    function for inpE (get input element) -- gets the input element that holds the
+    file-name/directory-path from the 'List Files' or 'List Dir(s)' display.
+    
+    NB: The 'file-name/directory-path' display-input-element has a parent and
+    sibling DOM-node-position relative to this-Element DOM node.
+    
+    @param thisEle   this-element function is invoked within
+    
+    @return filename or dir-path
+    */
+   function inpE(thisEle) {
+     return thisEle.parentNode.parentNode.childNodes[0].childNodes[0];
+   }
+
+   /*
+    function ajaxFn (ajax for filename (fn) processing) -- performs an action for a 
+    'List Files' filename.
+    
+    @param act        action        string of the action to be performed (view, delete)
+    @param thisEle   this-element
+    */
+   function ajaxFn(act, thisEle) {
+     ajax(act, 'fn', inpE(thisEle).value);
+   }
+
+   /*
+    function for ajaxMkdr (ajax make-directory [mkdir]) -- perform directory (dn) 
+    make directory as per the 'List Dir(s)' display button information.
+    
+    NB: The 'directory-path' display-input-element has a parent and
+    sibling DOM-node-position relative to this-Element DOM node.
+    
+    @param thisEle   this-element
+    */
+   function ajaxMkdr(thisEle) {
+     ajax('mksubdir',
+             'dn', inpE(thisEle).value,
+             'dnsub', thisEle.previousSibling.value);
+   }
+
+   /*
+    function for ajaxRmdir (ajax remove-directory [rmdir]) perform directory (dn)
+    remove-directory as per the 'List Dir(s)' display button information: with 
+    confirm prompt on the browser-UI.
+    
+    NB: The 'directory-path' display-input-element has a parent and
+    sibling DOM-node-position relative to this-Element DOM node.
+    
+    @param thisEle   this-element
+    */
+   function ajaxRmdir(thisEle) {
+     var dn = inpE(thisEle).value;
+     if (confirm(dn + "nnrmDir not reverse-able"))
+       ajax('rmdir', 'dn', dn);
+   }
+
+   /*
+    function mkval (make-sub-directory validate) -- basic validate for the 
+    mk-subdir input field.
+    
+    @param ele the mkdir field to be validated
+    */
+   function mkval(ele) {
+     var eleValue = ele.value;
+     var setState = false;
+     var errMsg = "";
+
+     if (eleValue.indexOf("/") !== -1) {
+       errMsg = "'/'";
+       setState = true;
+
+     } else if (eleValue.substring(0, 1) === " ") {
+       setState = true;
+       errMsg = "lead space";
+     }
+     if (setState) {
+       alert(errMsg + "  not permitted");
+     }
+     if (eleValue === "") {
+       setState = true;
+     }
+     ele.nextElementSibling.disabled = setState;
+   }
+
+   /*
+    function oninpDir (on-input-directory) -- validation when the dir: field changes.
+    Ensures the ESP and Browser-UI are in sync for a valid directory path format.
+    */
+   function oninpDir() {
+     var upFld = gE('dirroot');
+     upldbts();
+     if (upFld.value.endsWith("/"))
+       setDf(upFld.value);
+   }
+  </script>
+ </head>
+ <!-- class none will be removed by the ajax-onload request when all data has been
+      updated into the page 
+      
+      a number of div tags will be filled with data when ajax requests are made
+ -->
+ <body id='bdy' class='none' onload="ajax('onload')">
+  <table>
+   <tr><td>1.</td>
+    <td colspan='2' style='text-align:center'>
+     upload dir: <input type='text' id='dirroot' class='foc' name='dirroot' oninput='oninpDir()' value='' size='32'><span class='info'> Select dir from 'List Dir...'</span></td></tr>
+   <tr><td>2.</td><td><form method='post' id='upfile' enctype='multipart/form-data'>
+      <button class='b b3' type='button' onclick='resetF("upfile");'>R</button>
+      <input type='file' id='upfileinp' class='brw' name='name' multiple onchange='upldbts();'><br>
+      <button class='b' id='upfilebtt' disabled>Upload file(s)</button> to dir</form></td>
+    <td> <form method='post' id='updir' enctype='multipart/form-data'>
+      <button class='b b3' type='button' onclick='resetF("updir");'>R</button>
+      <input type='file' id='updirinp' class='brw' name='name' multiple webkitdirectory mozdirectory onchange='upldbts();' ><br>
+      <button class='b' id='updirbtt' disabled>Upload Directory</button> all files: browse-dir + sub-dir(s)
+     </form></td></tr>
+   <tr><td></td><td colspan='2' class='info'>1-20 files ideal to prevent memory issues in upload execution on device.</td></tr></table>
+  <div id='lastupldid'></div>
+  <table><tr><td>
+     <button class='b' onclick="ajax('list', 'files', 'do');">List Files</button>
+     <button class='b' onclick="ajax('list', 'dirs', 'do');">List Dir(s)</button></td>
+    <td class='prjnam'> DevFsUploadESP - <span id='fstyid'></span></td></tr></table>
+  <div id='lflsid'></div>
+  <div id='ldrsid'></div>
+  <table><tr><td><div id='vuid'></div></td></tr></table>
+ </body></html>

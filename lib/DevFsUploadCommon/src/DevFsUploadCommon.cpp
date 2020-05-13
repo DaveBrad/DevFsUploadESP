@@ -31,13 +31,13 @@
 
 ESP32WebServer* DevFsUploadESP::serverPabc;
 
-const char*  DevFsUploadESP::projEspTarget PROGMEM = " on ESP32";
+const char*  DevFsUploadESP::projEspTarget  = " on ESP32";
 #else
 #include <ESP8266WebServer.h>
 
 ESP8266WebServer* DevFsUploadESP::serverPabc;
 
-const char* PROGMEM DevFsUploadESP::projEspTarget PROGMEM = " on ESP8266";
+const char*  DevFsUploadESP::projEspTarget  = " on ESP8266";
 
 #endif
 
@@ -51,13 +51,12 @@ boolean DevFsUploadESP::uploadStarted = false;
 boolean DevFsUploadESP::uploadAction = false;
 
 String DevFsUploadESP::upldFileList = "";
-char* DevFsUploadESP::errUpl = "";
+String DevFsUploadESP::errUpl = "";
 String DevFsUploadESP::errUplAdd = "";
 
-const char* PROGMEM DevFsUploadESP::uploadAccessDefault = "/upload";
+const char* DevFsUploadESP::uploadAccessDefault PROGMEM = "/upload";
 
 String DevFsUploadESP::simpleErrorMsg = "";
-
 
 /**
     ***** BELOW *****
@@ -71,9 +70,6 @@ String DevFsUploadESP::simpleErrorMsg = "";
     NOTE: The array constructs store into PROGMEM, but do have some variable
           stack space impacts too.
 */
-
-int DevFsUploadESP::mainPageLength = -1;;
-int DevFsUploadESP::mainPageArrSize = -1;;
 
 /**
   The DOCTYPE html tag to indicate HTML 5 format for all the following
@@ -90,488 +86,13 @@ int DevFsUploadESP::mainPageArrSize = -1;;
   which allows viewing/editing in this cpp file a little easier.
   NB: extra whitespace is removed for ESP storage optimization.
 */
-const char* DevFsUploadESP::pageHTMLArr[]  = {
-  /* Arduino IDE places this into PROGMEM without the keyword */
-
-  "<!DOCTYPE HTML><html lang='en'><head><meta charset='UTF-8'>",
-
-  /**
-    NB: coding style using '\' optimizes both ESP program storage and global
-        variable use. Retain the style and check if making changes for increased
-        storage usage.
-
-        ->  use color code to save 2 bytes vs name
-        orangered  #ff4500
-        lightblue  #8fd8d8
-
-        b  b2 b3        button
-        dtb dro dcl     div table row cell
-        foc             focus element that is not a button
-        brw             browse+ button-field from multiple file/dir upload
-
-  */
-  "<title>DevFsUploadESP v 2</title>",
-  "<style>\
-.none{display:none}\
-.b{border-radius:15px;display:inline;}\
-.foc{border:2px solid lightgray;}\
-.brw{border:2px solid white;}\
-.foc:focus,.brw:focus,.b:focus{border:2px solid blue;}\
-.b2{color:red;}\
-.b3{width:0px;height:18px;padding-right:15px;background:#f2fcf9;}\
-.info{font-style:italic;font-size:0.8em;}\
-.bof{direction:ltr;float:left;}\
-.scrl{margin-left:24px;height:155px;overflow-y:scroll;direction:rtl;}\
-.dtb{display:table;}\
-.dtb .dro:nth-child(3n) div,\
-.dtb .dro:nth-child(3n) div input{background:#ffffcc;}\
-.sudo,\
-.dtb .dro:nth-child(3n) div .sudo{font-style:italic;background:#8fd8d8;}\
-\
-.dro{display:table-row;}\
-.dro div:nth-child(1) input{border:0px;}\
-\
-.dcl{display:table-cell;padding-right:10px;}\
-.dnfrm{display:inline;}\
-\
-.siz{text-align:right;}\
-.prjnam{color:#ff4500;text-decoration:underline;padding-bottom:10px;}\
-#vuid{width:85ch;}\
-#vuid p{margin-top:0;}\
-\
-.tab td:nth-child(2){text-align: right;}\
-</style><script>",
-  /**
-      begin the processing of scripts
-  */
-
-  /** function gE
-
-    Get element 'by id' as a function saves considerable bytes of
-    script text.
-  */
-  "function gE(eId){return document.getElementById(eId);}",
-
-  /**
-     function that sets the upload button enabled when files or dir are browse
-    selected AND the selected-dir (dir: field) is also valid.
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-       variable use. Retain the style and check if making changes for increased
-     storage usage.
-
-    Code has been really compressed to save storage space.
-
-    s    value of dirroot
-    isD  isDirValid
-
-    ufE  up-file-element    ufB up-file-button state   ufI up-file-input state
-    udE  up-dir-element     udB up-dir-button state    udI up-dir-input state
-  */
-  "function upldbts(){\
-var s=gE('dirroot').value;\
-var isD=s.endsWith(\"/\")&&s.startsWith(\"/\");\
-\
-var ufE=gE(\'upfileinp');\
-var udE=gE('updirinp');\
-\
-var ufB=true,udB=true;\
-var ufI=false,udI=false;\
-\
-if(ufE.value!==''&&isD){\
-ufB=false;\
-udI=true;\
-}\
-if(udE.value!==''&&isD){\
-udB=false;\
-ufI=true;\
-}\
-ufE.disabled=ufI;\
-udE.disabled=udI;\
-\
-gE('upfilebtt').disabled=ufB;\
-gE('updirbtt').disabled=udB;\
-}",
-
-  /**
-     function that resets the browse-selected setting
-
-    Code has been really compressed to save storage space.
-  */
-  "function resetF(formid){gE(formid).reset();upldbts();}",
-
-  /**
-    Sorts the file-list or file-dir(s) table alphabetically for display.
-
-    Also, inserts HTML code for controls based on raw data
-    from the ESP-server for Browser-UI presentation.
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-      variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    Code has been really compressed to save storage space.
-
-    isF   is-file-Boolean    true if for files, false for directories listing
-  */
-  "function sortList(isF){\
-var tab=gE(isF ? 'lfiles':'ldirs');\
-if(tab===null)return;\
-\
-var arr=[];\
-while(tab.firstChild){\
-var a=tab.firstChild.innerHTML;\
-if(a!==undefined)arr.push(a);\
-tab.removeChild(tab.firstChild);\
-}\
-\
-arr.sort();\
-for(var i=0;i<arr.length;i++){\
-var s=arr[i];\
-var idx=s.lastIndexOf(' ');\
-var nm=s.substring(0,idx);\
-var len=nm.length+2;\
-\
-var siz=s.substring(idx+1);\
-\
-s=\"<div class='dro'><div class='dcl'><input \";\
-\
-if(isF && nm.endsWith(\"/\"\)\
-|| !isF && siz===\"1\"){\
-s+=\"class='sudo' \";}\
-\
-s+=\"type='text' readonly tabindex='-1' value='\"+nm+\"'\";\
-if(isF){",
-  // file-table content
-  //
-  "s+=\" size='\"+len+\"'></div>\
-<div class='dcl siz'>\"+siz+\"</div><div class='dcl'>\
-<button class='b' onclick=\\\"ajaxFn('delete', this);\\\">Delete</button>\
-<button class='b' onclick=\\\"ajaxFn('view', this);\\\">View</button>\";\
-\
-s+=\"<form class='dnfrm' method='post'>\
-<input type='hidden' name='fn' readonly value='\"+nm+\"'>\
-<button class='b' type='submit' name='down'>Download</button>\
-</form></div>\";\
-\
-}else{",
-  // dir-table content
-  //
-  "s+=\"><button class='b' name='seldir' onclick=\\\"setDf('\"+nm+\"');\\\">Select</button>\
-</div>\";",
-
-  // mk-subdir & rmdir
-  //
-  // NB: coding style using '\' optimizes both ESP program storage and global
-  //     variable use. Retain the style and check if making changes for increased
-  //  storage usage.
-  "s+=\"<div class='dcl'>\
-<input class='foc' type='text' autocomplete='off' name='dnsub' value='' tabindex='0' oninput='mkval(this);'>\
-<button class='b' disabled onclick='ajaxMkdr(this);'>mk-subDir</button>\
-<button class='b b2' onclick='ajaxRmdir(this);'>rmDir</button>\
-</div>\";\
-}\
-tab.insertAdjacentHTML('beforeend', s);\
-}\
-}",     // end function
-
-  // NB: significant extra ESP store is required if coding last lines as
-  //      tab.insertAdjacentHTML('beforeend', s); }}", OR
-  //      tab.insertAdjacentHTML('beforeend', s);\
-  //      }\
-  //      }",
-  // vs.
-  //  "tab.insertAdjacentHTML('beforeend', s);",
-  //
-  //  "}",
-  //  "}",
-
-  /**
-    function for setDf (set dir field) which sets the select-dir field (dir:) and
-    performs ajax action to the upload-server
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-      variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    Code has been really compressed to save storage space.
-  */
-  "function setDf(dn){\
-ajax('seldir','dn',dn);\
-gE('dirroot').value=dn;\
-}",
-
-  /**
-    function for inpE (get input element) which gets the input element that holds the file-name or
-    directory-path in the 'List Files' or 'List Dir(s)' display.
-
-    NB: The structure of the display is based on element-node position to (this-Element).
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-      variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    Code has been really compressed to save storage space.
-
-    thisE   thisEle   this-element
-
-    return the element that is the input-element with filename or dir-path
-  */
-  "function inpE(thisE){return thisE.parentNode.parentNode.childNodes[0].childNodes[0];}",
-
-  /**
-     function for ajaxFn (ajax for filename (fn) processing) performs an action for a 'List Files'
-     filename.
-
-     NB: coding style using '\' optimizes both ESP program storage and global
-       variable use. Retain the style and check if making changes for increased
-     storage usage.
-
-     Code has been really compressed to save storage space.
-
-     act     action    string of the action to be performed (view, delete)
-     thisE   thisEle   this-element
-  */
-  "function ajaxFn(act,thisE){ajax(act,'fn',inpE(thisE).value);}",
-
-  /**
-      function for ajaxMkdr (ajax make-directory [mkdir]) perform directory (dn) make directory
-      as per the 'List Dir(s)' display button information.
-
-      NB: The structure of the display is based on element-node position to (this-Element).
-
-      NB: coding style using '\' optimizes both ESP program storage and global
-        variable use. Retain the style and check if making changes for increased
-      storage usage.
-
-      Code has been really compressed to save storage space.
-
-      thisE   thisEle   this-element
-  */
-  "function ajaxMkdr(thisE){\
-ajax('mksubdir',\
-'dn',inpE(thisE).value,\
-'dnsub',thisE.previousSibling.value);\
-}",
-
-
-  /**
-    function for ajaxRmdir (ajax remove-directory [rmdir]) perform directory (dn) remove-directory
-    as per the 'List Dir(s)' display button information: with confirm prompt on the browser-UI.
-
-    NB: The structure of the display is based on element-node position to (this-Element).
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-      variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    Code has been really compressed to save storage space.
-
-    thisE   thisEle   this-element
-  */
-  "function ajaxRmdir(thisE){\
-var dn=inpE(thisE).value;\
-\
-if(confirm(dn+\"\\n\\nrmDir not reverse-able\")) ajax('rmdir','dn',dn);\
-}",
-
-
-  /**
-    function for mkval (make-sub-directory validate) for the mk-subdir input field.
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-      variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    ss - set state for disabled condition
-    em - error message
-
-    Code has been really compressed to save storage space.
-
-    vE  ele.value
-    ss  set-state to
-    em  error-message
-  */
-  "function mkval(ele){\
-var vE=ele.value;\
-var ss=false;\
-var em=\"\";\
-\
-if(vE.indexOf(\"/\")!==-1){\
-em=\"'/'\";\
-ss=true;\
-\
-}else if(vE.substring(0,1)===\" \"){\
-ss=true;\
-em=\"lead space\";\
-}\
-if(ss) alert(em+\"  not permitted\");\
-\
-if(vE===\"\") ss=true;\
-\
-ele.nextElementSibling.disabled=ss;\
-}",
-
-  /**
-    function onipnDir (on-input-directory) validation when the dir: field changes.Ensures
-    the ESP and Browser-UI are in sync for a valid directory path format.
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-     variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    Code has been really compressed to save storage space.
-  */
-  "function oninpDir(){\
-var upFld=gE('dirroot');\
-upldbts();\
-\
-if(upFld.value.endsWith(\"/\")) setDf(upFld.value);\
-}",
-
-  /**
-     Function ajax [handlerAjax on ESP interface] will process changes to the selected-dir
-     field and AJAX the info to the ESP server via XMLHttpRequest
-
-    NB: coding style using '\' optimizes both ESP program storage and global
-      variable use. Retain the style and check if making changes for increased
-    storage usage.
-
-    Code has been really compressed to save storage space.
-
-    Do nothing on return from the server
-
-    ????
-
-    h http-object
-    p params
-  */
-  "function ajax(action,p1='',v1='',p2='',v2=''){\
-var h=new XMLHttpRequest();\
-var p='act';\
-p+= '=';\
-p+=action;\
-if(p1!==\"\"){\
-p+='&';\
-p+=p1;\
-p+='=';\
-p+=v1;\
-}\
-if(p2!==\"\"){\
-p+='&';\
-p+=p2;\
-p+='=';\
-p+=v2;\
-}\
-\
-h.open('POST','ajaxESP',true);\
-h.setRequestHeader('Content-type','application/x-www-form-urlencoded');\
-\
-h.onreadystatechange = function() {\
-if (this.readyState===4 && this.status===200) {\
-\
-if(this.responseText.startsWith('okay')) return;\
-\
-['lastupldid', 'lflsid', 'ldrsid', 'vuid'].forEach(function(item){\
-gE(item).innerHTML='';\
-});\
-\
-var firstEq = this.responseText.indexOf(\"=\");\
-var act = this.responseText.substring(0, firstEq);\
-var resp = this.responseText.substring(firstEq + 1).replace(/\\r|\\n/g,'');\
-\
-switch(act){\
-case 'onload':\
-var arr=resp.split(',');\
-\
-gE('fstyid').innerHTML=arr[0];\
-gE('dirroot').value=arr[1];\
-\
-if(arr[2]==='yesupld'){\
-ajax('upldlst');\
-}else{\
-gE('bdy').classList.remove('none');\
-}\
-return;\
-\
-case 'lfiles':\
-gE('lflsid').innerHTML=resp;\
-sortList(true);\
-break;\
-\
-case 'ldirs':\
-gE('ldrsid').innerHTML=resp;\
-sortList(false);\
-break;\
-\
-case 'upldlist':\
-gE('lastupldid').innerHTML=resp;\
-gE('bdy').classList.remove('none');\
-break;\
-\
-case 'view':\
-gE('vuid').innerHTML=resp;\
-break;\
-}\
-}\
-};\
-h.send(p);\
-}",
-
-  /* done scripts so other scripts are added prior */
-  "</script></head><body id='bdy' class='none' onload='ajax(\"onload\");'>",
-
-  // };
-
-  /**
-    mainPgxxxxxxxArr arrays contain the HTML code for the main-page of DevFsUploadESP.
-
-  */
-  // browse buttons
-  // const char* PROGMEM DevFsUploadESP::mainPgArr[]  = {
-  // title zone
-  "<table>",
-
-  // - browse button zone
-  // -- directory selected info, input
-  "<tr><td>1.</td>\
-<td colspan='2' style='text-align:center'>\
-upload dir: <input type='text' id='dirroot' class='foc' name='dirroot' oninput='oninpDir();' value='' size='32'><span class='info'> Select dir from 'List Dir...'</span></td></tr>\
-\
-<tr><td>2.</td><td><form method='post' id='upfile' enctype='multipart/form-data'>\
-<button class='b b3' type='button' onclick='resetF(\"upfile\");'>R</button>\
-<input type='file' id='upfileinp' class='brw' name='name' multiple onchange='upldbts();'><br>\
-<button class='b' id='upfilebtt' disabled>Upload file(s)</button> to dir",
-  "</form></td>\
-\
-<td> <form method='post' id='updir' enctype='multipart/form-data'>\
-<button class='b b3' type='button' onclick='resetF(\"updir\");'>R</button>\
-<input type='file' id='updirinp' class='brw' name='name' multiple webkitdirectory mozdirectory onchange='upldbts();' ><br>\
-<button class='b' id='updirbtt' disabled>Upload Directory</button> all files: browse-dir + sub-dir(s)\
-</form></td></tr>\
-\
-<tr><td></td><td colspan='2' class='info'>1-20 files ideal to prevent memory issues in upload execution on device.</td></tr></table>\
-<div id='lastupldid'></div>\
-\
-\
-<table><tr><td>\
-<button class='b' onclick=\"ajax('list','files','do');\">List Files</button>\
-<button class='b' onclick=\"ajax('list','dirs','do');\">List Dir(s)</button></td>\
-\<td class='prjnam'> DevFsUploadESP - <span id='fstyid'></span></td></tr></table>\
-\
-<div id='lflsid'></div>\
-<div id='ldrsid'></div>\
-<table><tr><td><div id='vuid'></div></td></tr></table>", // view zone
-
-  "</body></html>"
-};
 
 //
 // This code is based on original from ESP8266 documentation and webpage
 // "A Beginner's Guide to the ESP8266" Chapter 11 SPIFFS, Uploading files to SPIFFS
 //
 // the code has been modified to provide only upload file to
-// do development of applications SPIFFS http files more rapidly
+// do development of applications SPIFFS/LittleFS http files more rapidly
 
 DevFsUploadESP::DevFsUploadESP() {
 }
@@ -633,13 +154,10 @@ void DevFsUploadESP::handleUploadPage() {
   // -- the HTTP response provides a completed page with upldFileList info
   //
   WiFiClient client = serverPabc->client();
-  // DevFsUploadESP::respondHttp200(client, true);
-  // DevFsUploadESP::doctypeBody(client);
-
+ 
   // do we have a simple error condition to report
   if (simpleErrorMsg != "") {
     serverPabc->send(200, "text/plain", simpleErrorMsg);
-    // client.println(simpleErrorMsg);
     simpleErrorMsg = "";
 
   } else {
@@ -650,7 +168,7 @@ void DevFsUploadESP::handleUploadPage() {
       uploadAction = false;
     }
   }
-  client.stop();
+  client.flush();client.stop();
 }
 
 void DevFsUploadESP::mainPage(WiFiClient client) {
@@ -658,28 +176,27 @@ void DevFsUploadESP::mainPage(WiFiClient client) {
   // to calculate the size that is going to be used as the content-length
   // response in for the header
   //
-  // this is only done once as the page is static
-  if (mainPageArrSize == -1) {
-    mainPageArrSize = sizeof(pageHTMLArr) / sizeof(pageHTMLArr[0]);
-
-    mainPageLength = 0;
-    for (int i = 0; i < mainPageArrSize; i++) {
-      mainPageLength += strlen(pageHTMLArr[i]);   // client.println adds + 2
-      mainPageLength += 2;
-    }
-  }
+ 
   // although ESP32/ESP8266-WebServer libraries have functions to
   // send and the such, the lbraries are very simple and as such
-  // lack more capabilities on them
-
-  respondHttp200(client, true, mainPageLength, false);
-
-  for (int i = 0; i < mainPageArrSize; i++) {
-    client.println(pageHTMLArr[i]);
-  }
-  client.stop();
+  // lack more capabilities on them 
+   
+  // zip format to upload
+  
+  // respondHttp200(client, GZIP, 1000, false);
+  
+  respondHttp200(client, GZIP, htmlByteLength, false);
+  // EPS32 and ESP8266 compatible
+  client.write_P(((PGM_P)&htmlByte[0]), htmlByteLength);  
+  client.flush();client.stop();
+  
+  // due to the difference in PROGMEM mapping
+  // the following works on ESP32, but not on EPS8266
+  //
+  // 32 works: client.write(&htmlByte[0], htmlByteLength);
+  // 32 works: client.write(htmlByte, htmlByteLength);
 }
-
+ 
 /**
      Constructs the 200 response and supporting header information to
      be sent.
@@ -688,28 +205,33 @@ void DevFsUploadESP::mainPage(WiFiClient client) {
      length     length in bytes of content that will be provided
      connectClose  default true: add to header the Connection: close
 */
-void DevFsUploadESP::respondHttp200(WiFiClient client, boolean htmlText, int length, boolean connectionClose = false) {
+// enum httpContentType{HTML, PLAIN, GZIP};
+
+void DevFsUploadESP::respondHttp200(WiFiClient client, httpContentType type, int length, boolean connectionClose = false) {
 
   // although ESP32/ESP8266-WebServer library's have functions to
   // send and such, lack more involved capabilities to do responses
   // that are dynamic
-
-  client.println("HTTP/1.1 200 OK");
-  client.print("Content-Type: text/");
-  client.println( htmlText ? "html" : "plain");
-
-  if (length != 0) {
-    client.print("Content-Length: ");
+  client.println( F("HTTP/1.1 200 OK"));
+  
+  // HTML and GZIP will be text/html
+  client.print( F("Content-Type: text/"));
+  client.println( type == PLAIN ? "plain" : "html");
+  
+  // GZIP needs to indicate the encoding
+  if(type == GZIP){
+    client.println(F("Content-Encoding: gzip") );
+  }
+  if (length > -1) {
+    client.print( F("Content-Length: "));
     client.println(length);
   }
-
   if (connectionClose) {
-    client.println("Connection: close");
+    client.println( F("Connection: Close") );
   }
   // close of the header
   client.println("");
 }
-
 
 /**
    Completion page presented after upload or abort conditions happen.
@@ -744,7 +266,7 @@ void DevFsUploadESP::handleOther() {
         // page requestinng the download is unaffected.
         if (processDownload(serverPabc->arg("fn"))) return;
 
-        simpleErrorMsg = "Download failure";
+        simpleErrorMsg = F("Download failure");
       }
     }
   } // end uploadAction
@@ -768,7 +290,7 @@ void DevFsUploadESP::processViewFile(String filePath) {
   client.print(filePath);
   client.println("</p>");
 
-  client.print("<textarea style='width:95%;' spellcheck='false' rows='15'>");
+  client.print( F("<textarea style='width:95%;' spellcheck='false' rows='15'>") );
   int yieldPt = 100;
   while (f.available()) {
     client.print(f.readStringUntil('\r'));
@@ -804,12 +326,12 @@ boolean DevFsUploadESP::processDownload(String fn) {
     return false;
   }
   // may download the file (to browser), but provide filename without path
+  serverPabc->sendHeader( F("Content-Type"), F("text/text") );
+  
   String fnNoPath = fn.substring(idx + 1);
+  serverPabc->sendHeader( F("Content-Disposition"), "attachment; filename=" + fnNoPath);
 
-  serverPabc->sendHeader("Content-Type", "text/text");
-  serverPabc->sendHeader("Content-Disposition", "attachment; filename=" + fnNoPath);
-
-  serverPabc->streamFile(f, "application/octet-stream");
+  serverPabc->streamFile(f, F("application/octet-stream") );
   f.close();
 
   return true;
@@ -897,7 +419,7 @@ void DevFsUploadESP::handlerAjax() {
     // int contentLen = strlen(prefix);
     // contentLen += upldFileList.length();
     if (errUpl != "") {
-      content += "<div id='errupld'>";
+      content += F("<div id='errupld'>");
       content += errUpl;
       content += errUplAdd;
       content += "</div>";
@@ -926,15 +448,13 @@ void DevFsUploadESP::handlerAjax() {
     listFilesAffected = true;
 
   } else if (action == "view") {
-    respondHttp200(client, false, -1);
+    respondHttp200(client, PLAIN, -1);
     processViewFile(serverPabc->arg("fn"));
-    client.stop();
+    client.flush();client.stop();
     return;
 
-    // download is excluded from ajax as its a "separate" ajax type
-    // of connection via HTML-HTTP protocol
-
-    // directory actions
+    // "download" is excluded from ajax as its a "separate" ajax type
+    // of connection via a HTML-HTTP protocol
 
   } else if (action == "mksubdir") {
     listDirsAffected = true;
@@ -961,6 +481,7 @@ void DevFsUploadESP::handlerAjax() {
 
     } else if (serverPabc->hasArg("dirs")) {
       listDirsAffected = true;
+      listDirsAffected = true;
     }
   }
   // list either files or dir(s) as appropriate (they are mutually exclusive)
@@ -968,16 +489,23 @@ void DevFsUploadESP::handlerAjax() {
     // the key for the ajax response
 
     content = listFilesAffected ? "lfiles" : "ldirs";
-    content += "=<div class='scrl' tabindex='-1'><div class='bof dtb' id='";
-    content += listFilesAffected ? "lfiles'>" : "ldirs'><div>/ 0</div>";
-
+    content += F("=<div class='scrl' tabindex='-1'><div class='bof dtb' id='");
+    
+    // istFilesAffected ? does not support the F(... usage so long coded, 
+    // but does not take any additional memory
+    // content += listFilesAffected ? "lfiles'>" : "ldirs'><div>/ 0</div>";
+    if(listFilesAffected){
+      content += "lfiles'>";
+    }else{
+      content += F("ldirs'><div>/ 0</div>");
+    }
     // put in place any other found directories or files
     content += DevFsUploadESP::listFilesOrDirsFSTargeted("/", listFilesAffected);
 
     arrHolder[iOfArrs] = content.c_str();
     iOfArrs++;
 
-    arrHolder[iOfArrs] = "</div></div>";
+    arrHolder[iOfArrs] = "</div></div>";  // may not be F(.....);
     iOfArrs++;
   }
   respondOutput(client, iOfArrs, arrHolder);
@@ -993,14 +521,14 @@ void DevFsUploadESP::respondOutput(WiFiClient client, int iOfArrs,  const char* 
     // each is printed on a new line
     totalLen += 2;
   }
-  respondHttp200(client, false, totalLen);
+  respondHttp200(client, PLAIN, totalLen);
   // now do the output to the client
   for (int i = 0; i < iOfArrs; i++) {
 
     //d Serial.println(arrHolder[i]);
     client.println(arrHolder[i]);
   }
-  client.stop();
+  client.flush();client.stop();
 }
 
 /**
@@ -1030,7 +558,7 @@ void DevFsUploadESP::handleFileUpload() {
     } else if (upload.status == UPLOAD_FILE_END) {
       if (errUpl != "") {
         uploadStarted = true;
-        serverPabc->send(200, "text/plain", "done");
+        serverPabc->send(200, F("text/plain"), "done");
 
       } else {
         // If the file was successfully created
@@ -1038,9 +566,9 @@ void DevFsUploadESP::handleFileUpload() {
         uploadStarted = false;
 
         // OPTIMIZATION  from -> upldFileList += "<td>" + String(upload.totalSize) + "</td></tr>";
-        upldFileList += "<td>";
+        upldFileList += F("<td>");
         upldFileList += String(upload.totalSize);
-        upldFileList += "</td></tr>";
+        upldFileList += F("</td></tr>");
       }
 
     } else if (upload.status == UPLOAD_FILE_ABORTED) {
@@ -1052,7 +580,7 @@ void DevFsUploadESP::handleFileUpload() {
 
     if (upload.status != UPLOAD_FILE_START) {
       if (errUpl == "") {
-        errUpl = "500: protocol order issue";
+        errUpl = F("500: protocol order issue");
       }
     } else {
       // dirSelected variable needs to prefix the file name
@@ -1061,12 +589,12 @@ void DevFsUploadESP::handleFileUpload() {
       fn += upload.filename;
 
       if (upldFileList == "") {
-        upldFileList = "<table class='tab'><tr><th>File name</th><th>Size</th></tr>";
+        upldFileList = F("<table class='tab'><tr><th>File name</th><th>Size</th></tr>");
       }
       // OPTIMIZATION from -> upldFileList += "<tr><td>" + fn + "</td>";
-      upldFileList += "<tr><td>";
+      upldFileList += F("<tr><td>");
       upldFileList += fn;
-      upldFileList += "</td>";
+      upldFileList += F("</td>");
 
       // Open the file for writing in SPIFFS/LittleFS and overwrite
       // (create if it doesn't exist)
@@ -1075,7 +603,7 @@ void DevFsUploadESP::handleFileUpload() {
       fsUploadFile = DevFsUploadESP::openFile4WriteTargeted(fn);
 
       if (!fsUploadFile) {
-        errUpl = "500: fail create file: ";
+        errUpl = F("500: fail create file: ");
         errUplAdd = String(fn);
       } else {
         uploadStarted = true;
@@ -1094,4 +622,5 @@ void DevFsUploadESP::handleFileUpload() {
 // Unlike LittleFS unlike SPIFFS, the actual file descriptors are allocated as requested by the application, so in low memory conditions you may not be able to open new files. Conversely, this also means that only file descriptors used will actually take space on the heap.
 //
 // Because there are directories, the openDir method behaves differently than SPIFFS. Whereas SPIFFS will return files in “subdirectories” when you traverse a Dir::next() (because they really aren’t subdirs but simply files with “/”s in their names), SPIFFS will only return files in the specific subdirectory. This mimics the POSIX behavior for directory traversal most C programmers are used to.
+
 

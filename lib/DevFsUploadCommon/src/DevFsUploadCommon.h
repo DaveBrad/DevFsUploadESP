@@ -267,12 +267,13 @@ class DevFsUploadESP {
     /** title for FS and ESP-type presentation
     */
     // LittleFS or SPIFFS  [DevFsUpload'FS'.cpp coded]
-    static const char* PROGMEM projTitleTarget;
+    static const char* projTitleTarget PROGMEM;
+    
     // ESP32 or ESP8266 [DevFsUploadCommon.cpp coded]
-    static const char* PROGMEM projEspTarget;
+    static const char* projEspTarget PROGMEM;
 
     // string to use for access to the upload webpage (default: "/upload")
-    static const char* PROGMEM uploadAccessDefault;
+    static const char* uploadAccessDefault PROGMEM;
 
     // indicators for upload processing and what is being uploaded
     // to the ESPxxx device from the browser (upload of only one file
@@ -285,7 +286,7 @@ class DevFsUploadESP {
     // error fields when upload errors are detected and need to be reported to
     // the HTML browser
     static String upldFileList;
-    static char* errUpl;
+    static String errUpl;
     static String errUplAdd;
 
     static String simpleErrorMsg;
@@ -295,17 +296,19 @@ class DevFsUploadESP {
     // the directory or sub-directory to store the file(s) too)
     static void setDirSelected(String setStr);
     static String selectedDir;
-
-    static const char* pageHTMLArr[];
-
-    static int mainPageLength;   // calculated once at run time
-    static int mainPageArrSize;
-
-    static void mainPage(WiFiClient client);
-
-    // the main page has zones
+    
+    // the main page in byte gzip format and its length in bytes
     //
-    //? static const char* PROGMEM mainPgArr[];
+    // the code for this will be in DevFsUploadCommon2.cpp and
+    // will compile alongside all cpp files in an Arduino IDE environment
+    // it is a part of DevFsUploadCommon.h
+    //
+    
+    static const byte htmlByte[] PROGMEM;
+    static const int htmlByteLength;
+
+    // outputs the mainpage to the client
+    static void mainPage(WiFiClient client);
 
     // WebServer handler methods
     static void handleUploadPage(); // main page
@@ -328,7 +331,9 @@ class DevFsUploadESP {
        length     length in bytes of content that will be provided
        connectClose  default true: add to header the Connection: close
     */
-    static void respondHttp200(WiFiClient client, boolean htmlText, int length, boolean connectionClose);
+    enum httpContentType{HTML, PLAIN, GZIP};
+    
+    static void respondHttp200(WiFiClient client, httpContentType type, int length, boolean connectionClose);
     
     static void respondOutput(WiFiClient client, int iOfArrs, const char* arrHolder[]);
 

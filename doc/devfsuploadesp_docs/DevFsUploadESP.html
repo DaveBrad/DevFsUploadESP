@@ -3,7 +3,7 @@
 <HTML>
  <HEAD>
   <meta charset="utf-8"/>
-  <title><i>DevFsUploadESP</i> development aid</title>
+  <title>DevFsUploadESP V 2 development aid (docs)</title>
   <link rel="stylesheet" type="text/css" href="./DevFsUploadESP.css">
   <script src="./DevFsUploadESP.js" type="text/javascript"></script>
   <script src="./scriptFlashElement.js" type="text/javascript"></script>
@@ -204,17 +204,20 @@
       <div class="inddiv">
        <p>List all the files in the ESP's FS; with full-file-path, its size, and buttons for action on the file.</p>
        <dl>
-        <dt><div class="divbutt divbuttas">Delete</div> <i>button</i></dt>
-        <dd>A button to <i>delete</i> the file on the ESP FS.</dd>
-
         <dt><div class="divbutt divbuttas">View</div> <i>button</i></dt>
         <dd>Will download the contents of the file for viewing at the end of the browser-UI page. If the file is an iamge, will display the image too.</dd>
 
         <dt><div class="divbutt divbuttas">Download</div> <i>button</i></dt>
         <dd>Will download the file as per a browser's manner. [Firefox, Chrome, Edge,... all work slightly different, but do the same thing.]
         <p class="warninghang">Warning: If an attempt to download has a failure of any kind, there will be a simple error message.</p></dd>
+       
+        <dt><div class="divbutt divbuttas">Delete</div> <i>button</i></dt>
+        <dd>A button to <i>delete</i> the file on the ESP FS.</dd>
        </dl>
+       <figure>
        <img src="./imgs/listfiles.png" alt="listdirl image">
+       <figcaption class="small">'Arrow' keys may be used to transition the buttons in 'List Files' view; 'tab'/'shift+tab' outside the view.</figcaption>
+       </figure>
        <p>In this SPIFFS example, a <b>file</b> appears as
         <span style="background: #8fd8d8; color:black;">/subdir/c/dd/</span> which is a file-name representating a pseudo-directory: as injected by <i>DevFsUploadESP</i>. It will be removed by <i>DevFsUploadESP</i> if a file on the FS starts-with the directory path.
        </p>
@@ -228,15 +231,17 @@
         <dd>A button to <i>select</i> and set the <i>upload dirs: field</i> to this directory; sets the ESP-target-directory for upload too.</dd>
 
         <dt><div class="divbutt">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div> <div class="divbutt divbuttas">mk-subDir</div> <i>field</i> and <i>button</i></dt>
-        <dd>Will create a sub-directory on the ESP FS which will be the 'sub-dir + <i>field</i>'. Only one subDir-level is allowed.
+        <dd>Will create a sub-directory on the ESP FS which will be the '&lt;dir&gt; + <i>field</i>'. Only one subDir-level is allowed.
         <p class="warninghang">Warning: If the mkdir fails, no error message will be provided.</p></dd>
 
         <dt><div class="divbutt divbuttas">rmDir</div> <i>button</i></dt>
         <dd>Will remove the directory and its sub-directories, along with all files.
         <p>'None reverse-able' action alert needs confirmation.</p></dd>
        </dl>
-
-       <img src="./imgs/listdirl.png" alt="listdirl image">
+       <figure>
+        <img src="./imgs/listdirl.png" alt="listdirl image">
+        <figcaption class="small">'Arrow' keys may be used to transition buttons &amp; fields in 'List Dir(s)' view; 'tab'/'shift+tab' outside the view.</figcaption>
+       </figure>
        <p>In this SPIFFS example, a <b>directory</b> appears as
         <span style="background: #8fd8d8; color:black;">/subdir/c/dd/</span> which is a pseudo-directory: as injected by <i>DevFsUploadESP</i>. It will be removed by <i>DevFsUploadESP</i> if a file on the FS starts-with the directory path.
        </p>
@@ -465,41 +470,49 @@
        <table class="tabconfsup">
         <tr>
          <td></td>
-         <td>SPIFFS</td>
-         <td>LittleFS</td>
+         <td>SPIFFS<br><span class='inforam'>[PROGMEM / SRAM]</span></td>
+         <td>LittleFS<br><span class='inforam'>[PROGMEM / SRAM]</span></td>
+         <td></td>
         </tr>
         <tr>
-         <td>ESP8266</td>
+         <td>ESP8266WebServer</td>
          <td>
-          <div>
-           <svg id="xx1" viewBox="-20 0 60 55" width="110" height="110">
+         <div>
+          <svg  class="svgtck" id="xx1" viewBox="-5 2 12 12" width="50" height="25">
            <polygon points="4,7 7,9 10,2 11,2 8,11 3,8" fill="green"/>
-           </svg>
-          </div></td>
+          </svg> 
+          ~10.3K / ~424
+          </div>
+          </td>
          <td id="xx12">
           <div>
-           <svg viewBox="-20 0 60 55" width="110" height="110">
+          <svg  class="svgtck" id="xx1" viewBox="-5 2 12 12" width="50" height="25">
            <polygon points="4,7 7,9 10,2 11,2 8,11 3,8" fill="green"/>
            </svg>
-          </div></td>
+           ~9.9K / ~436 </div></td>
+           <td rowspan="2">
+           <p class='small2'>PROGMEM
+           <br>- DevFsUploadESP + ESPxxxxWebServer API
+           <br>&nbsp;&nbsp; mem usage</p>
+           <p class='small2'>SRAM<br>-  global variable static RAM mem usage</p></td>
         </tr>
         <tr>
-         <td>ESP32</td>
+         <td>ESP32WebServer</td>
          <td>
           <div>
-           <svg viewBox="-20 0 60 55" width="110" height="110">
+           <svg  class="svgtck" id="xx1" viewBox="-5 2 12 12" width="50" height="25">
            <polygon points="4,7 7,9 10,2 11,2 8,11 3,8" fill="green"/>
            </svg>
-          </div></td>
+           ~14.2K / ~120 </div></td>
          <td>
           <div>
-           <svg viewBox="-20 0 60 55" width="110" height="110">
+          <svg  class="svgtck" id="xx1" viewBox="-5 2 12 12" width="50" height="25">
                <polygon points="2,3 3,3 12,12 11,12" fill="red"/> 
                <polygon points="11,3 12,3 3,12 2,12" fill="red"/> 
-           <!-- <polygon points="2,3 3,3 7,6 11,3 12,3 7,7 12,10 11,10 6,7 3,10 2,10 6,6" fill="red"/>   -->
-           </svg>
+           </svg>&nbsp;
           </div>
          </td>
+         <td></td>
         </tr>
        </table>
        <br>
@@ -517,7 +530,7 @@
       <div class="inddiv">
        <p>The ESP has finite storage which required design compromises: browser-UI pre-validation, ESP fault reporting, read-ability of the HTML/CSS/JS files provided to the browser,....
        </p>
-       <p>There are others compromises, one of which is 'accessiblity' in the browser-UI. Supporting a full ease-of-accessibility would result in large amounts of storage on an ESP.<br>&nbsp;&nbsp;&nbsp;&bull; 'Tabs' between controls should work, but remain untested as each browser (FF, Chrome,...) works differently.</P>
+       <p>There are others compromises, one of which is 'accessiblity' in the browser-UI. Supporting full ease-of-accessibility would result in large amounts of storage on an ESP.<br>&nbsp;&nbsp;&nbsp;&bull; 'Tabs' between controls should work, but remain untested as each browser (FF, Chrome,...) works differently.</P>
        <p>There are more limitations, but....</p>
       </div>
      </div>
