@@ -1,4 +1,5 @@
 /* Copyright (c) 2018-2020 dbradley. */
+
 #ifndef ESP8266
 #ifndef ESP32
 #error "Only for ESP32/8266 module"
@@ -23,6 +24,8 @@
 #include <FS.h>
 #include <WiFiClient.h>
 
+#include <base64.h>
+
 // the server object to operate through
 
 #ifdef ESP32
@@ -31,13 +34,13 @@
 
 ESP32WebServer* DevFsUploadESP::serverPabc;
 
-const char*  DevFsUploadESP::projEspTarget  = " on ESP32";
+const char* DevFsUploadESP::projEspTarget  = " on ESP32";
 #else
 #include <ESP8266WebServer.h>
 
 ESP8266WebServer* DevFsUploadESP::serverPabc;
 
-const char*  DevFsUploadESP::projEspTarget  = " on ESP8266";
+const char* DevFsUploadESP::projEspTarget  = " on ESP8266";
 
 #endif
 
@@ -141,7 +144,7 @@ void DevFsUploadESP::setupUpLoad(ESP8266WebServer* serverP, const char* access) 
    Completion page presented after upload or abort conditions happen.
    Along with any file-list or error information.
 */
-void DevFsUploadESP::handleUploadPage() {
+void DevFsUploadESP::handleUploadPage() {  
   // has dual purpose as 'initial page' and 'on upload completed'
   // for an upload selection
 
@@ -154,7 +157,7 @@ void DevFsUploadESP::handleUploadPage() {
   // -- the HTTP response provides a completed page with upldFileList info
   //
   WiFiClient client = serverPabc->client();
- 
+
   // do we have a simple error condition to report
   if (simpleErrorMsg != "") {
     serverPabc->send(200, "text/plain", simpleErrorMsg);
@@ -168,7 +171,7 @@ void DevFsUploadESP::handleUploadPage() {
       uploadAction = false;
     }
   }
-  client.flush();client.stop();
+  client.flush(); client.stop();
 }
 
 void DevFsUploadESP::mainPage(WiFiClient client) {
@@ -176,27 +179,27 @@ void DevFsUploadESP::mainPage(WiFiClient client) {
   // to calculate the size that is going to be used as the content-length
   // response in for the header
   //
- 
+
   // although ESP32/ESP8266-WebServer libraries have functions to
   // send and the such, the lbraries are very simple and as such
-  // lack more capabilities on them 
-   
+  // lack more capabilities on them
+
   // zip format to upload
-  
+
   // respondHttp200(client, GZIP, 1000, false);
-  
+
   respondHttp200(client, GZIP, htmlByteLength, false);
   // EPS32 and ESP8266 compatible
-  client.write_P(((PGM_P)&htmlByte[0]), htmlByteLength);  
-  client.flush();client.stop();
-  
+  client.write_P(((PGM_P)&htmlByte[0]), htmlByteLength);
+  client.flush(); client.stop();
+
   // due to the difference in PROGMEM mapping
   // the following works on ESP32, but not on EPS8266
   //
   // 32 works: client.write(&htmlByte[0], htmlByteLength);
   // 32 works: client.write(htmlByte, htmlByteLength);
 }
- 
+
 /**
      Constructs the 200 response and supporting header information to
      be sent.
@@ -213,13 +216,13 @@ void DevFsUploadESP::respondHttp200(WiFiClient client, httpContentType type, int
   // send and such, lack more involved capabilities to do responses
   // that are dynamic
   client.println( F("HTTP/1.1 200 OK"));
-  
+
   // HTML and GZIP will be text/html
   client.print( F("Content-Type: text/"));
   client.println( type == PLAIN ? "plain" : "html");
-  
+
   // GZIP needs to indicate the encoding
-  if(type == GZIP){
+  if (type == GZIP) {
     client.println(F("Content-Encoding: gzip") );
   }
   if (length > -1) {
@@ -277,39 +280,125 @@ void DevFsUploadESP::handleOther() {
   process the file and return the content as text for viewing
 */
 void DevFsUploadESP::processViewFile(String filePath) {
+  //
+  // buffers for processing the file for speedy transfer.
+  //
+  // ESP8266 and ESP32 buffer sizes are different between the two devices
+  // due to memory architecture/management differences. Also, empirical 
+  // application of buffer sizes has minimized the values too thise below.
+  //
+  // The buffer read or writes would crash, very notably on ESP8266 due to
+  // smaller storage and 32-bit boundary  
+  //
+#ifdef ESP8266
+// this appears to be a limit for ESP8266 (does not crash)
+#define BUF_READ_FILE_SIZE 512
+#define BUF_WRITE_VIEW_SIZE 1024
+  
+#else
+    
+#define BUF_READ_FILE_SIZE 1024
+#define BUF_WRITE_VIEW_SIZE 2048   
+  
+#endif
+    
+  // buffers used for transferring data from a file to the client (as
+  // hex encoded contented)
+ 
+  // transfer as HEX-encoded conversion array
+  const char* hexArr = "0123456789ABCDEF";
+    
+  char bufReadFile[BUF_READ_FILE_SIZE];
+  char bufWriteVu[BUF_WRITE_VIEW_SIZE];
+  
+  // prepare the file for processing
+  WiFiClient client = serverPabc->client();
   // open the file if possible
   File f = openFile4ReadTargeted(filePath);
 
   if (!f) {
-    // nothing can be done if the file does not open
-    return;
-  }
-  // process the file into a view-able textarea
-  WiFiClient client = serverPabc->client();
-  client.print("view=<p>Viewing: ");
-  client.print(filePath);
-  client.println("</p>");
-
-  client.print( F("<textarea style='width:95%;' spellcheck='false' rows='15'>") );
-  int yieldPt = 100;
-  while (f.available()) {
-    client.print(f.readStringUntil('\r'));
-    yieldPt--;
-    if (yield == 0) {
-      // a large file (not typical) could cause ESP Watch Dog Timer
-      // issue thus a yield
-      yield();
-      yieldPt = 100;
+    // not much can be done
+    respondHttp200(client, HTML, 0);
+  }else{ 
+    // the view file is read as bytes and then converted to HEX char-pairs
+    // so it may be transferred to the client as binary. Not needed for 
+    // text files, but for image files the HEX encoding is needed.
+    //    
+    // consists of 3 parts where the length of all 3 determines
+    // the content-length value for the http header information
+  
+    // an image file is optional and secial HTML for image display and
+    // processing is required (the following images are supported)
+    boolean imageFileBool = filePath.endsWith(".png") 
+          || filePath.endsWith(".jpg")
+          || filePath.endsWith(".bmp") 
+          || filePath.endsWith(".gif");
+          
+    // calculating the size for output is most important for speed
+    // between the this-server and client
+    
+    // part1 (static) -- is the view file information and textarea container for 
+    // text/image as characters
+    String part1 = F("view=<p>Viewing: ");
+    part1 += filePath;
+    part1 += F("</p><textarea id='vutxt' style='width:95%;' spellcheck='false' rows='15'>");
+    
+    // part2 (dynamic) -- conversion of file contents to encoded-HEX for transmission of
+    // binary content
+    
+    // part3 (static) -- close of the textarea and optional image display field
+    String part3 = "</textarea>";
+    
+    // image is optional
+    if (imageFileBool) {
+      String imgType = filePath.substring(filePath.lastIndexOf(".") + 1);
+      
+      // if the file is an image then process into an img tag
+      part3 += "<div id='imgoffile'>";
+      part3 += imgType;
+      part3 += "</div>";
     }
+    // sum the lengths of all parts
+    int lengthAll = part1.length() + 2;  // +2 for println
+    lengthAll += f.size() * 2;   // dynamic but is file char --> HEX encoded (* 2)
+    lengthAll += part3.length() + 2;
+    
+    // send the header with the expected length to transmit and part1
+    respondHttp200(client, HTML, lengthAll);
+    client.println(part1);
+        
+    // part2 -- convert file chars/bytes to HEX-encoded chars for binary transfer
+    // without using WebServer tools
+    int bufWriteVuPtr = 0;
+    int lenRead = 0; 
+ 
+    // process the file in-blocks
+    while (f.available()) {
+      lenRead = f.read((uint8_t*)bufReadFile, BUF_READ_FILE_SIZE);
+      
+      // HEX-encode the read-chars
+      for(int n = 0; n < lenRead; n++){
+         char c = bufReadFile[n];          
+   
+         bufWriteVu[bufWriteVuPtr] = hexArr[(c >> 4) & 0x0f];
+         bufWriteVuPtr++;
+         
+         bufWriteVu[bufWriteVuPtr] = hexArr[c & 0x0f];
+         bufWriteVuPtr++;
+      }
+      // write the HEX buffer to the client
+      client.write((uint8_t*)bufWriteVu, bufWriteVuPtr);
+      bufWriteVuPtr = 0;
+      
+      // consider a yield at some point in time (if not ESPAsyncWebServer)
+    }
+    f.close();
+    
+    // part3 -- end of textarea and the optional image display HTML
+    client.println(part3);
   }
-  f.close();
-  client.println("</textarea>");
-
-  if (filePath.endsWith(".png") || filePath.endsWith(".jpg")
-      || filePath.endsWith(".bmp") || filePath.endsWith(".gif")) {
-    // if the file is an image then process into an img tag
-    client.println("<img src='.." + filePath + "' alt='missing img'>");
-  }
+  client.flush();
+  client.stop();
 }
 
 /**
@@ -327,7 +416,7 @@ boolean DevFsUploadESP::processDownload(String fn) {
   }
   // may download the file (to browser), but provide filename without path
   serverPabc->sendHeader( F("Content-Type"), F("text/text") );
-  
+
   String fnNoPath = fn.substring(idx + 1);
   serverPabc->sendHeader( F("Content-Disposition"), "attachment; filename=" + fnNoPath);
 
@@ -345,10 +434,10 @@ boolean DevFsUploadESP::processDownload(String fn) {
   the client in response. ESP32 on client.stop() does not close the connection
   and as such the Content-Length is required in the commuication.
   OTHERWISE, - the browser timeout on responses recieved comes into play. This
-               timeout is tyically 2 seconds delay to the renderering of the
-               browser display.
-             - For the below ajax responses, 2 seconds for browser reaction
-               is too long, so code reflects Content-Length capability.
+  timeout is tyically 2 seconds delay to the renderering of the
+  browser display.
+  - For the below ajax responses, 2 seconds for browser reaction
+  is too long, so code reflects Content-Length capability.
 
 */
 
@@ -406,8 +495,8 @@ void DevFsUploadESP::handlerAjax() {
   } else if (action == "upldlst") {
     preProcessed = true;
     // request for known upload-list content is being asked for
-    // const char* prefix = "upldlist=<br>Last upload:";
-    arrHolder[iOfArrs] = "upldlist=<br>Last upload:";
+    // const char* prefix = "upldlist=<br>Last upload: ";
+    arrHolder[iOfArrs] = "upldlist=<br>Last upload: ";
     iOfArrs++;
 
     content = upldFileList;
@@ -448,9 +537,9 @@ void DevFsUploadESP::handlerAjax() {
     listFilesAffected = true;
 
   } else if (action == "view") {
-    respondHttp200(client, PLAIN, -1);
+    // respondHttp200(client, HTML, -1);
     processViewFile(serverPabc->arg("fn"));
-    client.flush();client.stop();
+    // client.flush(); client.stop();
     return;
 
     // "download" is excluded from ajax as its a "separate" ajax type
@@ -466,7 +555,7 @@ void DevFsUploadESP::handlerAjax() {
       }
     }
 
-  } else if (action ==  "rmdir") {
+  } else if (action == "rmdir") {
     listDirsAffected = true;
 
     // remove the directory, but remove all internal files before hand
@@ -490,13 +579,13 @@ void DevFsUploadESP::handlerAjax() {
 
     content = listFilesAffected ? "lfiles" : "ldirs";
     content += F("=<div class='scrl' tabindex='-1'><div class='bof dtb' id='");
-    
-    // istFilesAffected ? does not support the F(... usage so long coded, 
+
+    // istFilesAffected ? does not support the F(... usage so long coded,
     // but does not take any additional memory
     // content += listFilesAffected ? "lfiles'>" : "ldirs'><div>/ 0</div>";
-    if(listFilesAffected){
-      content += "lfiles'>";
-    }else{
+    if (listFilesAffected) {
+      content += "lfiles' > ";
+    } else {
       content += F("ldirs'><div>/ 0</div>");
     }
     // put in place any other found directories or files
@@ -528,7 +617,7 @@ void DevFsUploadESP::respondOutput(WiFiClient client, int iOfArrs,  const char* 
     //d Serial.println(arrHolder[i]);
     client.println(arrHolder[i]);
   }
-  client.flush();client.stop();
+  client.flush(); client.stop();
 }
 
 /**
@@ -584,7 +673,7 @@ void DevFsUploadESP::handleFileUpload() {
       }
     } else {
       // dirSelected variable needs to prefix the file name
-      // and it is assumed to be '/xxxxx/' in format (as per the protocol)
+      // and it is assumed to be ' / xxxxx / ' in format (as per the protocol)
       String fn = selectedDir;
       fn += upload.filename;
 

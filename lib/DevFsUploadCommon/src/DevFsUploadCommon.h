@@ -15,18 +15,20 @@
 // 3) Code for the DevFsUpload common class
 
 /**
-  License: 31st March 2020.
+  License: 10th May 2020.
 
   This license applies to the 'DevFsUploadESP' group of library program(s)
   for use on/with Arduino IDE.
 
   Definition
-  A "library" is comprised of a set of files, as listed below, which
+  The "library" is comprised of a set of files, as listed below, which
   are grouped together to be an executable library-program.
      (C/C++ files .h and .cpp pairs are implied [.h/.cpp])
 
-     - DevFsUpload.h/.cpp
      -                    DevFsUploadCommon.h/.cpp
+                                   |
+                                   +----------- DevFsUpLoadCommon2.cpp
+                                   |          (DevFsUpLoadCommon.html)
                                    |
                   +----------------.---------------+
                   |                                |
@@ -34,14 +36,17 @@
 
                          [one or the other]
 
-   "personal use" is a person using the library(ies) for there own
-   development.
+  "personal use" is a person using the library(ies) for there own
+  development.
 
-   "entity use" is using for development purposes within a collaborative
-   project, comprising persons or teams within an organization.
+  "entity use" is using for development purposes within a collaborative
+  project, comprising persons or teams within an organization.
 
-  Documentation is provided with the program in its Github repository
-  and is also covered by this license.
+  Documentation and supporting tools are provided with the library in its 
+  Github repository and is also covered by this license.
+  
+  'DevFsUpLoadCommon.htm'l is the file that holds the HTML, style and Javascript
+  content that will be compressed and gzipped into 'DevFsUpLoadCommon2.cpp'.
 
   Conditions
   1. Use is royality free for development activities (testing,

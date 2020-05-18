@@ -167,8 +167,34 @@
              break;
 
            case 'view':
-             // view of files content to be displayed on the Browse-UI
+             // view of files content to be displayed on the Browse-UI          
              gE('vuid').innerHTML = resp;
+             
+             // the content of the textarea is HEX codes for the characters
+             // need to convert it
+             var vuTxt = gE('vutxt');
+              
+             var hex = vuTxt.innerHTML;
+             var str = '';
+             var hLen = hex.length;  // optimization
+	           for (var n = 0; n < hLen; n += 2) {
+		            str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+	           }
+             vuTxt.innerHTML = str;
+             
+             var imgDiv = gE('imgoffile');
+             
+             if(imgDiv !== null){
+                // get the type of image type
+                var type= imgDiv.innerHTML;
+                imgDiv.innerHTML = '';
+                
+                var img = new Image();
+                img.src = 'data:image/' + type + ';base64,' + btoa(str);
+             
+                var imgDiv = gE('imgoffile');
+                imgDiv.appendChild(img);
+             }
              break;
          }
        }
@@ -485,7 +511,7 @@
     */
    function ajaxRmdir(thisEle) {
      var dn = inpE(thisEle).value;
-     if (confirm(dn + "nnrmDir not reverse-able"))
+     if (confirm(dn + "\n\nrmDir un-do-able"))
        ajax('rmdir', 'dn', dn);
    }
 

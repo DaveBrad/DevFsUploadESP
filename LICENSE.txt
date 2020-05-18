@@ -1,61 +1,66 @@
-License: 31st March 2020.
+  License: 10th May 2020.
 
   This license applies to the 'DevFsUploadESP' group of library program(s)
   for use on/with Arduino IDE.
-  
- Definition
-  A "library" is comprised of a set of files, as listed below, which 
-  are grouped together to be an executable library-program. 
+
+  Definition
+  The "library" is comprised of a set of files, as listed below, which
+  are grouped together to be an executable library-program.
      (C/C++ files .h and .cpp pairs are implied [.h/.cpp])
-   
-     - DevFsUpload.h/.cpp
+
      -                    DevFsUploadCommon.h/.cpp
+                                   |
+                                   +----------- DevFsUpLoadCommon2.cpp
+                                   |          (DevFsUpLoadCommon.html)
                                    |
                   +----------------.---------------+
                   |                                |
          DevFsUploadSPIFFS.h/.cpp         DevFsUploadLittleFS.h/.cpp
-         
-                         [one or the other]
-     
-   "personal use" is a person using the library(ies) for there own 
-   development.
-   
-   "entity use" is using for development purposes within a collaborative
-   project, comprising persons or teams within an organization.
 
-  Documentation is provided with the program in its Github repository 
-  and is also covered by this license.
+                         [one or the other]
+
+  "personal use" is a person using the library(ies) for there own
+  development.
+
+  "entity use" is using for development purposes within a collaborative
+  project, comprising persons or teams within an organization.
+
+  Documentation and supporting tools are provided with the library in its 
+  Github repository and is also covered by this license.
   
- Conditions
-  1. Use is royality free for development activities (testing, 
+  'DevFsUpLoadCommon.htm'l is the file that holds the HTML, style and Javascript
+  content that will be compressed and gzipped into 'DevFsUpLoadCommon2.cpp'.
+
+  Conditions
+  1. Use is royality free for development activities (testing,
      design,....) both commerical and non-commerical.
 
   2. Modification may be made with the provision:
-     a) That a different class name is used. That is; not 
-        'DevFsUploadSPIFFS' or 'DevFsUploadLittleFS' or 'DevFsUploadCommon' 
+     a) That a different class name is used. That is; not
+        'DevFsUploadSPIFFS' or 'DevFsUploadLittleFS' or 'DevFsUploadCommon'
         or 'DevFsUploadESP'.
-     b) An attribute to original library-author(s) is provided in the 
+     b) An attribute to original library-author(s) is provided in the
         new code/class.
-     c) An "origin" statement/pointer to original library source is 
+     c) An "origin" statement/pointer to original library source is
         provided in the new code/class.
-     d) Sub-licensing to a more open/permissive/closed license is 
+     d) Sub-licensing to a more open/permissive/closed license is
         not permitted.
 
-  3. The library is provided AS-IS and has no warranty as to fitness 
-     for use. Determining fitness for use is the responsibility of 
+  3. The library is provided AS-IS and has no warranty as to fitness
+     for use. Determining fitness for use is the responsibility of
      the user.
 
-  4. This library may not be productized, that is provided 
-     with/along/packaged-with a consumer product, either commerical or 
+  4. This library may not be productized, that is provided
+     with/along/packaged-with a consumer product, either commerical or
      non-commerical.
 
-  5. The user accepts the limitations below as necessary for the 
+  5. The user accepts the limitations below as necessary for the
      program to be functional and none interferring with a users
      product/project development.
 
   6. The "library" is not open-source.
 
-  7. Modification allows other persons/entities to re-use the 
+  7. Modification allows other persons/entities to re-use the
      intelluctual property for 'personal use' or for 'entity
      use', but not change these license conditions.
 
@@ -71,12 +76,12 @@ License: 31st March 2020.
   The program interacts with other sub-systems that it has no control
   over: HTML, Javascript, Javascript access to client PC file
   structures,......... which restrict capability.
-  
+
   License-end
-  
- Why this license. 
+
+  Why this license.
   All the GNU, GPL, MIT,.... typical licenses allow modifications where
   same-name may be used and deployed, causing confusion for users and
-  causes trust issues. Additionally, 
-  - typical license(s) allow productization, this library would not 
-    be suitable as a product.   
+  causes trust issues. Additionally,
+  - typical license(s) allow productization, this library would not
+    be suitable as a product.
