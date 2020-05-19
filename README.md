@@ -1,18 +1,18 @@
 # DevFsUploadESP
- ESP32/8266 file-system upload development tool for SPIFFS or LittleFS
+ ESP32 or ESP8266 file-system upload development aid for SPIFFS or LittleFS
  
- A Arduino set of libraries that provides a browser-UI to manage file-system components on the ESP.
+ A Arduino set of libraries that provides a browser-UI to manage file-system components on the ESP. (User documentation is found in 'docs/devfsuploadesp_docs')
  
  A user needs to install the libraries (found in the **lib** folder):<br/>
      **DevFsUploadCommon**, **DevFsUploadSPIFFS** and **DevFsUploadLittleFS**
      
- See the doc/devfsuploadesp_docs files (download and view .html will a browser).
+ See the doc/devfsuploadesp_docs files (download and view .html with a browser).
      
  The capabilities provided are:<br/>
- files: list, delete, view<br/>
+ files: list, view, download, delete<br/>
  dirs: list, select (for upload ESP-target-directory) make-sub-directory, remove-directory
  
- upload browse: reset, upload, browse  (all for files ro directory management
+ upload browse: reset, upload, browse  (all for files or directory management
  
  ESP-target-directory : 'manual' or 'select dir' setting capability<br/>
  (upload target)
